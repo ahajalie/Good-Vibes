@@ -1,6 +1,10 @@
 package com.example.hajalie.goodvibes2;
 
 import android.content.Context;
+import android.content.Intent;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.design.widget.FloatingActionButton;
@@ -10,7 +14,14 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.EditText;
 
+
+/*Google Maps API KEY
+*  AIzaSyBYxrhTq9VBSEHp3OHR1VUH9BN5sAtMGXY
+*
+* Example API Request
+*/
 public class MainActivity extends AppCompatActivity {
 
     @Override
@@ -28,6 +39,21 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        LocationListener locationListener = new LocationListener() {
+            public void onLocationChanged(Location location) {
+                // Called when a new location is found by the network location provider.
+                //Do Stuff
+            }
+
+            public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+            public void onProviderEnabled(String provider) {}
+
+            public void onProviderDisabled(String provider) {}
+        };
+
     }
 
     @Override
@@ -56,5 +82,13 @@ public class MainActivity extends AppCompatActivity {
         Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         v.vibrate(800);
 
+    }
+
+    public void sendDestination(View view) {
+        Intent intent = new Intent(this, Directions.class);
+        EditText editText = (EditText) findViewById(R.id.direction_input);
+        String destination = editText.getText().toString();
+        intent.putExtra("destination", destination);
+        startActivity(intent);
     }
 }
