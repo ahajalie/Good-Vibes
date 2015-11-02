@@ -21,6 +21,8 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
+import java.net.URLEncoder;
+
 /*
 See here for more info on Location
 http://developer.android.com/guide/topics/location/strategies.html
@@ -50,14 +52,19 @@ public class Directions extends AppCompatActivity {
         final TextView textView = (TextView) findViewById(R.id.direction_output);
         textView.setMovementMethod(new ScrollingMovementMethod());
         final RequestQueue queue = Volley.newRequestQueue(this);
-        final String url = "https://maps.googleapis.com/maps/api/directions/json?origin=dearborn&destination=detroit&mode=walking";
-
+        final String googleMapsAPICall = "https://maps.googleapis.com/maps/api/directions/json?origin=";
+//        "dearborn&destination=detroit&mode=walking";
+        Bundle extras = getIntent().getExtras();
+        final String destination = extras.getString("destination");
         final LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         LocationListener locationListener = new LocationListener() {
             public void onLocationChanged(Location location) {
                 // Called when a new location is found by the network location provider.
                 //Do Stuff
                 Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                String url = googleMapsAPICall + lastKnownLocation.getLatitude() + "," + lastKnownLocation.getLongitude();
+                url += "&destination=" + URLEncoder.encode(destination);
+                url += "&mode=walking";
                 // Request a string response from the provided URL.
                 StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                         new Response.Listener<String>() {
