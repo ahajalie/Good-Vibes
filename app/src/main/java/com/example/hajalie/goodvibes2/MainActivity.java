@@ -1,5 +1,6 @@
 package com.example.hajalie.goodvibes2;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
@@ -7,6 +8,8 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -15,6 +18,11 @@ import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.Locale;
 
 
 /*Google Maps API KEY
@@ -24,6 +32,10 @@ import android.widget.EditText;
 */
 public class MainActivity extends AppCompatActivity {
 
+    private ImageButton btnSpeak;
+    private EditText txtText;
+    TextToSpeech t1;
+    protected static final int RESULT_SPEECH = 1;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,29 +43,101 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+//            }
+//        });
+
+        btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
+        txtText = (EditText) findViewById(R.id.direction_input);
+        t1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+            public void onInit(int status) {
+                if(status != TextToSpeech.ERROR) {
+                    t1.setLanguage(Locale.US);
+                }
             }
         });
 
-        LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        LocationListener locationListener = new LocationListener() {
-            public void onLocationChanged(Location location) {
-                // Called when a new location is found by the network location provider.
-                //Do Stuff
+        btnSpeak.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+                Intent intent = new Intent(
+                        RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, "en-US");
+
+                try {
+                    startActivityForResult(intent, RESULT_SPEECH);
+                    txtText.setText("");
+                } catch (ActivityNotFoundException a) {
+                    Toast t = Toast.makeText(getApplicationContext(),
+                            "Opps! Your device doesn't support Speech to Text",
+                            Toast.LENGTH_SHORT);
+                    t.show();
+                }
+            }
+        });
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case RESULT_SPEECH: {
+                if (resultCode == RESULT_OK && null != data) {
+
+                    ArrayList<String> text = data
+                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    String response = text.get(0);
+                    txtText.setText(text.get(0));
+                    processVoice(response);
+                }
+                break;
             }
 
-            public void onStatusChanged(String provider, int status, Bundle extras) {}
+        }
+    }
 
-            public void onProviderEnabled(String provider) {}
 
-            public void onProviderDisabled(String provider) {}
-        };
+    private void processVoice(String str) {
+        String string = str.toLowerCase();
+        string = string.replaceAll("[!?,]", "");
+        String[] strings = string.split("\\s+");
+        if(strings.length >= 2 && strings[0].equals("interval")) {
+            String value = strings[1];
+            float interval = Float.parseFloat(value);
+            t1.speak("Interval set to " + value, TextToSpeech.QUEUE_FLUSH, null);
+        }
+        else if(strings.length >= 2 && strings[0].equals("intensity")) {
+            String value = strings[1];
+            float intensity = Float.parseFloat(value);
+            t1.speak("Intensity set to " + value, TextToSpeech.QUEUE_FLUSH, null);
+        }
+        else {
+            t1.speak("Your Destination is" + str + ". Is this correct?", TextToSpeech.QUEUE_FLUSH, null);
+        }
+    }
 
+    private boolean containsWord(String str, String word) {
+        String string = str.toLowerCase();
+        word = word.toLowerCase();
+        string = string.replaceAll("[!?,]", "");
+        String[] strings = string.split("\\s+");
+        for(int i = 0; i < strings.length; ++i) {
+            if(strings[i].equals(word)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
