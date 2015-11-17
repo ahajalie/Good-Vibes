@@ -17,13 +17,25 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -34,16 +46,21 @@ import java.util.Locale;
 *
 * Example API Request
 */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private ImageButton btnSpeak;
-    private EditText txtText;
+    private TextView txtText;
     TextToSpeech t1;
     protected static final int RESULT_SPEECH = 1;
     private SharedPreferences preferences;
     private SharedPreferences.Editor editor;
     private boolean noErrors; //determine what to say on startup
     private BluetoothAdapter mBluetoothAdapter;
+    private final Context context = this;
+    private EditText editText;
+    private GoogleApiClient googleApiClient = null;
+    private boolean connected = false;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,7 +80,12 @@ public class MainActivity extends AppCompatActivity {
         preferences = getApplicationContext().getSharedPreferences("preferences", 0);
         editor = preferences.edit();
         btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
-        txtText = (EditText) findViewById(R.id.direction_input);
+        txtText = (TextView) findViewById(R.id.direction_input);
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
         t1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
@@ -99,6 +121,7 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, "en-US");
 
                 try {
+                    t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
                     startActivityForResult(intent, RESULT_SPEECH);
                     txtText.setText("");
                 } catch (ActivityNotFoundException a) {
@@ -205,6 +228,8 @@ public class MainActivity extends AppCompatActivity {
         }
         else {
             t1.speak("Your Destination is" + str, TextToSpeech.QUEUE_FLUSH, null);
+            txtText.setText(str);
+            checkDestination(str);
         }
     }
 
@@ -270,9 +295,102 @@ public class MainActivity extends AppCompatActivity {
 
     public void sendDestination(View view) {
         Intent intent = new Intent(this, Directions.class);
-        EditText editText = (EditText) findViewById(R.id.direction_input);
+        TextView editText = (TextView) findViewById(R.id.direction_input);
         String destination = editText.getText().toString();
         intent.putExtra("destination", destination);
         startActivity(intent);
+    }
+    @Override
+    public void onConnected(Bundle bundle) {
+        connected = true;
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        connected = false;
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        connected = false;
+        Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+        t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+        toast.show();
+    }
+
+    // Checks if the input destination is valid
+    // If so, starts Directions activity
+    // If not, request the user to try again
+    public void checkDestination(String str) {
+        final Location location = connected ?
+                LocationServices.FusedLocationApi.getLastLocation(googleApiClient): null;
+        if (location == null) {
+            Toast toast = Toast.makeText(context, Values.LOCATION_ERROR, Toast.LENGTH_SHORT);
+            toast.show();
+            return;
+        }
+        final String destination = str;
+        // Make API request
+        try {
+            GoogleApi.getInstance(this).makeDirectionsHttpRequest(location, destination, new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject response) {
+                    String status = "";
+                    try {
+                        status = response.getString("status");
+                    } catch(JSONException e) {
+                        Log.e("GoodVibes", "JSON exception", e);
+                        Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+                        t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                        toast.show();
+                    }
+                    switch (status) {
+                        case "OK":
+                            Intent intent = new Intent(context, Directions.class);
+                            intent.putExtra("location", location);
+                            intent.putExtra("destination", destination);
+                            intent.putExtra("response", response.toString());
+                            startActivity(intent);
+                            break;
+                        case "NOT_FOUND":
+                            Toast.makeText(context, Values.DESTINATION_ERROR, Toast.LENGTH_SHORT).show();
+                            t1.speak(Values.DESTINATION_ERROR, TextToSpeech.QUEUE_ADD, null);
+                            break;
+                        case "ZERO_RESULTS":
+                            Toast.makeText(context, Values.PATH_ERROR, Toast.LENGTH_SHORT).show();
+                            t1.speak(Values.PATH_ERROR, TextToSpeech.QUEUE_ADD, null);
+                            break;
+                        default:
+                            Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT).show();
+                            t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                            break;
+                    }
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+                    t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                    toast.show();
+                }
+            });
+        } catch (UnsupportedEncodingException e) {
+            Log.e("GoodVibes", "Unsupported Encoding exception", e);
+            Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+            t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+            toast.show();
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        googleApiClient.connect();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        googleApiClient.disconnect();
     }
 }
