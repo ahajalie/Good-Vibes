@@ -1,5 +1,6 @@
 package com.example.hajalie.goodvibes2;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,7 +11,9 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.os.Vibrator;
+import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -19,6 +22,7 @@ import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.util.Log;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -60,6 +64,7 @@ public class Directions extends AppCompatActivity implements
     private Timer timer;
     private String information;
     TextToSpeech t1;
+    protected static final int RESULT_SPEECH = 1;
     private TextView textView0, textView1, textView2, textView3, textView4;
 
     @Override
@@ -153,7 +158,27 @@ public class Directions extends AppCompatActivity implements
         };
         timer.schedule(doAsynchronousTask, 0, intervalInMs);
 
+        LinearLayout linearlayout = (LinearLayout) findViewById(R.id.directions_layout);
+        linearlayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
+                Intent intent = new Intent(
+                        RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, "en-US");
+
+                try {
+                    t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
+                    startActivityForResult(intent, RESULT_SPEECH);
+                } catch (ActivityNotFoundException a) {
+                    Toast t = Toast.makeText(getApplicationContext(),
+                            "Opps! Your device doesn't support Speech to Text",
+                            Toast.LENGTH_SHORT);
+                    t.show();
+                }
+            }
+        });
     }
 
     /**
@@ -179,6 +204,30 @@ public class Directions extends AppCompatActivity implements
         }
         else {
             return str;
+        }
+    }
+
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case RESULT_SPEECH: {
+                if (resultCode == RESULT_OK && null != data) {
+
+                    ArrayList<String> text = data
+                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    String response = text.get(0);
+                    if(MainActivity.containsWord(response, "cancel")) {
+                        t1.speak("Canceling directions", TextToSpeech.QUEUE_FLUSH, null);
+                        while(t1.isSpeaking()) {
+                            SystemClock.sleep(100);
+                        }
+                        finish();
+                    }
+                }
+                break;
+            }
+
         }
     }
 
@@ -324,8 +373,8 @@ public class Directions extends AppCompatActivity implements
             direction += 2 * (float)Math.PI;
         }
         // Todo: Improve accuracy - azimuth measurement, and true vs. magnetic north
-        textView3.setText(Float.toString(bearing));
-        textView4.setText(Float.toString(direction));
+        textView3.setText("Bearing: " + Float.toString(bearing));
+        textView4.setText("Angle to point: " + Float.toString(direction));
 //        vibrate();
 
         // Todo: Make new API request if necessary
@@ -452,7 +501,7 @@ public class Directions extends AppCompatActivity implements
                     vibrate();
                 }
                 direction = newDirection;
-                textView2.setText(Float.toString(azimuth));
+                textView2.setText("Compass Orientation: "+ Float.toString(azimuth));
             }
         }
     }

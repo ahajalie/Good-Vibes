@@ -254,7 +254,7 @@ public class MainActivity extends AppCompatActivity implements
         return -1.0f;
     }
 
-    private boolean containsWord(String str, String word) {
+    public static boolean containsWord(String str, String word) {
         String string = str.toLowerCase();
         word = word.toLowerCase();
         string = string.replaceAll("[!?,]", "");

@@ -60,7 +60,7 @@ public class GoogleApi {
         directionsURL += "&mode=walking";
         String placesURL = PLACES_API_URL + location.getLatitude() + "," + location.getLongitude();
         placesURL += "&query=" + destinationEncoded;
-        placesURL += "&radius=50000";
+        placesURL += "&radius=1600";
         placesURL += "&key=" + API_KEY;
         JsonObjectRequest jsonObjectRequest0 = new JsonObjectRequest(Request.Method.GET, placesURL, null,
         new Response.Listener<JSONObject>() {
