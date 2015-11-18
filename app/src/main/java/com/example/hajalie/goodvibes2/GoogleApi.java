@@ -8,12 +8,16 @@ import android.util.Log;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
@@ -27,6 +31,9 @@ import java.net.URLEncoder;
 public class GoogleApi {
 
     private final String DIRECTIONS_API_URL = "https://maps.googleapis.com/maps/api/directions/json?origin=";
+    private final String PLACES_API_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json?location=";
+    private final String API_KEY = "AIzaSyAypAdSyp1m-Vwg1H0pbKAVTuFrhkhrE_c";
+    String directionsURL;
     private static RequestQueue requestQueue = null;
     private static GoogleApi instance = null;
 
@@ -47,14 +54,38 @@ public class GoogleApi {
                                    final Response.ErrorListener errorListener)
             throws UnsupportedEncodingException {
         // Called when a new location is found by the network location provider.
-        String url = DIRECTIONS_API_URL + location.getLatitude() + "," + location.getLongitude();
+        directionsURL = DIRECTIONS_API_URL + location.getLatitude() + "," + location.getLongitude();
         String destinationEncoded = URLEncoder.encode(destination, "UTF-8");
-        url += "&destination=" + destinationEncoded;
-        url += "&mode=walking";
-        // Request a string response from the provided URL.
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
-                responseListener, errorListener);
-        // Add the request to the RequestQueue.
-        requestQueue.add(jsonObjectRequest);
+        //directionsURL += "&destination=" + destinationEncoded;
+        directionsURL += "&mode=walking";
+        String placesURL = PLACES_API_URL + location.getLatitude() + "," + location.getLongitude();
+        placesURL += "&query=" + destinationEncoded;
+        placesURL += "&radius=50000";
+        placesURL += "&key=" + API_KEY;
+        JsonObjectRequest jsonObjectRequest0 = new JsonObjectRequest(Request.Method.GET, placesURL, null,
+        new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                try {
+                    JSONObject location = response.getJSONArray("results").getJSONObject(0).getJSONObject("geometry").getJSONObject("location");
+                    String coordinates = location.getString("lat") + "," + location.getString("lng");
+                    directionsURL += "&destination=" + coordinates;
+                    // Request a string response from the provided URL.
+                    JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, directionsURL, null,
+                            responseListener, errorListener);
+                    // Add the request to the RequestQueue.
+                    requestQueue.add(jsonObjectRequest);
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                VolleyLog.e("Error: ", error.getMessage());
+            }
+        });
+        requestQueue.add(jsonObjectRequest0);
     }
 }

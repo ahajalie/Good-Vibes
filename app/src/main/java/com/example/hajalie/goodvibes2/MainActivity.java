@@ -204,6 +204,7 @@ public class MainActivity extends AppCompatActivity implements
             float interval = containsNumber(str);
             if(interval >= 0) {
                 editor.putFloat("interval", interval);
+                editor.commit();
                 t1.speak("Interval set to " + Float.toString(interval) + "seconds", TextToSpeech.QUEUE_FLUSH, null);
             }
             else {
@@ -214,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements
             float intensity = containsNumber(str);
             if(intensity >= 0) {
                 editor.putFloat("intensity", intensity);
+                editor.commit();
                 t1.speak("Intensity set to " + Float.toString(intensity), TextToSpeech.QUEUE_FLUSH, null);
             }
             else {

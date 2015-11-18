@@ -9,11 +9,14 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Vibrator;
+import android.speech.tts.TextToSpeech;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Html;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -30,6 +33,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Directions extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
@@ -49,6 +55,11 @@ public class Directions extends AppCompatActivity implements
     private Sensor magnetometer;
     private float azimuth; // may need sync
     private float prevAzimuth = 0;
+    private float bearing;
+    private float direction;
+    private Timer timer;
+    private String information;
+    TextToSpeech t1;
     private TextView textView0, textView1, textView2, textView3, textView4;
 
     @Override
@@ -78,14 +89,20 @@ public class Directions extends AppCompatActivity implements
         locationRequest.setFastestInterval(4000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
+
         // Manage text views
         textView0 = (TextView) findViewById(R.id.direction_output);
         textView1 = (TextView) findViewById(R.id.direction_output1);
         textView2 = (TextView) findViewById(R.id.direction_output2);
         textView3 = (TextView) findViewById(R.id.direction_output3);
         textView4 = (TextView) findViewById(R.id.direction_output4);
-        textView0.setText(route.getTargetStep().htmlInstructions);
-
+        //swapped textviews so that info is on top
+        textView1.setText(Html.fromHtml(route.getTargetStep().htmlInstructions));
+        information = new String();
+        information += "Location: " + route.endAddress + "." + "\n";
+        information += "Distance: " + addUnit(route.distanceText) + "." + "\n";
+        information += "Time: " + addUnit(route.durationText) + "." + "\n";
+        textView0.setText(information);
         // Build Google API client
         googleApiClient = new GoogleApiClient.Builder(getApplicationContext())
                 .addApi(LocationServices.API)
@@ -93,13 +110,76 @@ public class Directions extends AppCompatActivity implements
                 .addOnConnectionFailedListener(this)
                 .build();
 
+
         // Manage sensors for orientation
         sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
-        SharedPreferences preferences = getApplicationContext().getSharedPreferences("preferences", 0);
 
+        // Set up TextToSpeech
+        t1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if(status != TextToSpeech.ERROR) {
+                    t1.setLanguage(Locale.US);
+                    t1.speak(information, TextToSpeech.QUEUE_ADD, null);
+                }
+            }
+        });
+
+        SharedPreferences preferences = getApplicationContext().getSharedPreferences("preferences", 0);
+        //retrieve interval from settings, default value of 5 if not defined
+        //vibrate every $_INTERVAL seconds
+        float interval = preferences.getFloat("interval", 5.0f);
+        Long intervalInMs = Math.round(((double) interval) * 1000);
+        final Handler handler = new Handler();
+        timer = new Timer();
+        TimerTask doAsynchronousTask = new TimerTask() {
+            @Override
+            public void run() {
+                handler.post(new Runnable() {
+                    @SuppressWarnings("unchecked")
+                    public void run() {
+                        try {
+                            vibrate();
+                        }
+                        catch (Exception e) {
+                            // TODO Auto-generated catch block
+                        }
+                    }
+                });
+            }
+        };
+        timer.schedule(doAsynchronousTask, 0, intervalInMs);
+
+
+    }
+
+    /**
+     *
+     * @param str
+     * @return
+     *
+     * Takes the string with an abbreviation at the end converts it to the full word
+     * Example: "2.8 mi" returns "2.8 miles"
+     * TODO: Possible add more units
+     */
+    private String addUnit(String str) {
+        String unit = str.substring(str.length() - 2, str.length());
+        String unit2 = str.substring(str.length() - 3, str.length());
+        if (unit.equals("mi")) {
+            return str + "les";
+        }
+        else if (unit.equals("ft")) {
+            return str.substring(0, str.length()-1) + "eet";
+        }
+        else if (unit2.equals("min")) {
+            return str + "utes";
+        }
+        else {
+            return str;
+        }
     }
 
     // Information for each step along the route
@@ -214,7 +294,7 @@ public class Directions extends AppCompatActivity implements
         Location targetLocation = route.getTargetLocation();
 
         // Check if reached target location
-        textView1.setText(Float.toString(newLocation.distanceTo(targetLocation)));
+
         if (newLocation.distanceTo(targetLocation) < Values.LOCATION_BUFFER) {
             route.incrementTargetLocation();
             targetLocation = route.getTargetLocation();
@@ -234,12 +314,12 @@ public class Directions extends AppCompatActivity implements
         }
 
         // Determine bearings and vibrate in desired direction
-        float bearing = currentLocation.bearingTo(targetLocation);
+        bearing = currentLocation.bearingTo(targetLocation);
         if (bearing < 0) {
             bearing += 360;
         }
         bearing = bearing * (float)Math.PI / 180;
-        float direction = bearing - azimuth;
+        direction = bearing - azimuth;
         if (direction < 0) {
             direction += 2 * (float)Math.PI;
         }
@@ -316,6 +396,8 @@ public class Directions extends AppCompatActivity implements
     @Override
     public void onStop() {
         super.onStop();
+        timer.cancel();
+        t1.stop();
         googleApiClient.disconnect();
     }
 
@@ -360,10 +442,16 @@ public class Directions extends AppCompatActivity implements
                 } else {
                     azimuth = orientation[0];
                 }
-                if(Math.abs(azimuth - prevAzimuth) > 2) {
+                //if change in orientation is big vibrate
+                //TODO: make accurate for final release
+                float newDirection = bearing - azimuth;
+                if (newDirection < 0) {
+                    newDirection += 2 * (float)Math.PI;
+                }
+                if(Math.abs(newDirection - direction) > 2) {
                     vibrate();
                 }
-                prevAzimuth = azimuth;
+                direction = newDirection;
                 textView2.setText(Float.toString(azimuth));
             }
         }
