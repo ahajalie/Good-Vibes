@@ -74,10 +74,18 @@ public class GoogleApi {
                     JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, directionsURL, null,
                             responseListener, errorListener);
                     // Add the request to the RequestQueue.
-                    requestQueue.add(jsonObjectRequest);
+                    if(response.getString("status").equals("OK")) {
+                        requestQueue.add(jsonObjectRequest);
+                    }
 
                 } catch (JSONException e) {
                     e.printStackTrace();
+                    directionsURL += "&destination=" + "ahiodsasahushudhusdhusdgusdguifdhufd";
+                    JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, directionsURL, null,
+                            responseListener, errorListener);
+                    requestQueue.add(jsonObjectRequest);
+
+
                 }
             }
         }, new Response.ErrorListener() {

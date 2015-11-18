@@ -343,11 +343,14 @@ public class Directions extends AppCompatActivity implements
         Location targetLocation = route.getTargetLocation();
 
         // Check if reached target location
-
+        String distance = "Distance: " + newLocation.distanceTo(targetLocation) + "\n";
+        textView1.setText(distance);
         if (newLocation.distanceTo(targetLocation) < Values.LOCATION_BUFFER) {
             route.incrementTargetLocation();
             targetLocation = route.getTargetLocation();
-            textView0.setText(route.getTargetStep().htmlInstructions);
+            distance += Html.fromHtml(route.getTargetStep().htmlInstructions);
+            textView1.setText(distance);
+            vibrate();
             // Check if arrived at destination
             if (route.arrivedAtDestination()) {
                 // Stop giving directions
@@ -375,7 +378,6 @@ public class Directions extends AppCompatActivity implements
         // Todo: Improve accuracy - azimuth measurement, and true vs. magnetic north
         textView3.setText("Bearing: " + Float.toString(bearing));
         textView4.setText("Angle to point: " + Float.toString(direction));
-//        vibrate();
 
         // Todo: Make new API request if necessary
 //        try {
@@ -493,14 +495,6 @@ public class Directions extends AppCompatActivity implements
                 }
                 //if change in orientation is big vibrate
                 //TODO: make accurate for final release
-                float newDirection = bearing - azimuth;
-                if (newDirection < 0) {
-                    newDirection += 2 * (float)Math.PI;
-                }
-                if(Math.abs(newDirection - direction) > 2) {
-                    vibrate();
-                }
-                direction = newDirection;
                 textView2.setText("Compass Orientation: "+ Float.toString(azimuth));
             }
         }
