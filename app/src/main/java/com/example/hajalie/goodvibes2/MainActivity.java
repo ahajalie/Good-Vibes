@@ -49,6 +49,15 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
+    public int  FRONT = 0,
+                FRONT_RIGHT = 1,
+                RIGHT = 2,
+                BACK_RIGHT = 3,
+                BACK = 4,
+                BACK_LEFT = 5,
+                LEFT = 6,
+                FRONT_LEFT = 7;
+
     private ImageButton btnSpeak;
     private TextView txtText;
     TextToSpeech t1;
