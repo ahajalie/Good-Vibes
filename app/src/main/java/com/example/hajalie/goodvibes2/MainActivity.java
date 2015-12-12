@@ -158,14 +158,19 @@ public class MainActivity extends AppCompatActivity implements
                 break;
             case (R.id.vib2):
                 vibeDir = RIGHT;
+                break;
             case (R.id.vib3):
                 vibeDir = BACK_RIGHT;
+                break;
             case (R.id.vib4):
                 vibeDir = BACK;
+                break;
             case (R.id.vib5):
                 vibeDir = BACK_LEFT;
+                break;
             case (R.id.vib6):
                 vibeDir = LEFT;
+                break;
             case (R.id.vib7):
                 vibeDir = FRONT_LEFT;
                 break;
