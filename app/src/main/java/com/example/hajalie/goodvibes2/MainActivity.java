@@ -60,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private ImageButton btnSpeak;
     private TextView txtText;
+    Arduino arduino;
     TextToSpeech t1;
     protected static final int RESULT_SPEECH = 1;
     private SharedPreferences preferences;
@@ -85,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements
 //                        .setAction("Action", null).show();
 //            }
 //        });
+        arduino = new Arduino(getApplicationContext());
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         preferences = getApplicationContext().getSharedPreferences("preferences", 0);
         editor = preferences.edit();
@@ -142,6 +144,38 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
+    }
+
+    // Vibrate the belt in a specific direction
+    public void vibrateBelt(View view) {
+        Integer vibeDir = -1;
+        switch (view.getId()) {
+            case (R.id.vib0):
+                vibeDir = FRONT;
+                break;
+            case (R.id.vib1):
+                vibeDir = FRONT_RIGHT;
+                break;
+            case (R.id.vib2):
+                vibeDir = RIGHT;
+            case (R.id.vib3):
+                vibeDir = BACK_RIGHT;
+            case (R.id.vib4):
+                vibeDir = BACK;
+            case (R.id.vib5):
+                vibeDir = BACK_LEFT;
+            case (R.id.vib6):
+                vibeDir = LEFT;
+            case (R.id.vib7):
+                vibeDir = FRONT_LEFT;
+                break;
+        }
+        int temp = arduino.write(vibeDir.toString());
+        if(temp == -1) {
+            arduino = new Arduino(getApplicationContext());
+            t1.speak("Arduino failure", TextToSpeech.QUEUE_ADD, null);
+        }
+        t1.speak(Integer.toString(temp), TextToSpeech.QUEUE_ADD, null);
     }
 
     @Override
@@ -242,6 +276,16 @@ public class MainActivity extends AppCompatActivity implements
             txtText.setText(str);
             checkDestination(str);
         }
+    }
+
+    //Quick test to see if android usb is working
+    public void arduinoTest(View view) {
+        int temp = arduino.write("1");
+        if(temp == -1) {
+            arduino = new Arduino(getApplicationContext());
+            t1.speak("Arduino failure", TextToSpeech.QUEUE_ADD, null);
+        }
+        t1.speak(Integer.toString(temp), TextToSpeech.QUEUE_ADD, null);
     }
 
     /*

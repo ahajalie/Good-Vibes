@@ -67,6 +67,8 @@ public class Directions extends AppCompatActivity implements
     protected static final int RESULT_SPEECH = 1;
     private TextView textView0, textView1, textView2, textView3, textView4;
 
+    Arduino arduino;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,7 +77,6 @@ public class Directions extends AppCompatActivity implements
         setSupportActionBar(toolbar);
 
         // Good Vibes Code //
-
         // Initialization
         destination = getIntent().getExtras().getString("destination");
         currentLocation = (Location) getIntent().getExtras().get("location");
@@ -158,6 +159,7 @@ public class Directions extends AppCompatActivity implements
         };
         timer.schedule(doAsynchronousTask, 0, intervalInMs);
 
+        //This code sets up input so that touching the screen causes the voice input to start
         LinearLayout linearlayout = (LinearLayout) findViewById(R.id.directions_layout);
         linearlayout.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -179,6 +181,10 @@ public class Directions extends AppCompatActivity implements
                 }
             }
         });
+
+        //initialize Arduiono class
+        arduino = new Arduino(getApplicationContext());
+        arduino.write("hello");
     }
 
     /**
@@ -344,10 +350,12 @@ public class Directions extends AppCompatActivity implements
 
         // Check if reached target location
         String distance = "Distance: " + newLocation.distanceTo(targetLocation) + "\n";
+        distance += Html.fromHtml(route.getTargetStep().htmlInstructions);
         textView1.setText(distance);
         if (newLocation.distanceTo(targetLocation) < Values.LOCATION_BUFFER) {
             route.incrementTargetLocation();
             targetLocation = route.getTargetLocation();
+            distance = "Distance: " + newLocation.distanceTo(targetLocation) + "\n";
             distance += Html.fromHtml(route.getTargetStep().htmlInstructions);
             textView1.setText(distance);
             vibrate();
