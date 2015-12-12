@@ -51,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private ImageButton btnSpeak;
     private TextView txtText;
+    Arduino arduino;
     TextToSpeech t1;
     protected static final int RESULT_SPEECH = 1;
     private SharedPreferences preferences;
@@ -76,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements
 //                        .setAction("Action", null).show();
 //            }
 //        });
+        arduino = new Arduino(getApplicationContext());
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         preferences = getApplicationContext().getSharedPreferences("preferences", 0);
         editor = preferences.edit();
@@ -233,6 +235,16 @@ public class MainActivity extends AppCompatActivity implements
             txtText.setText(str);
             checkDestination(str);
         }
+    }
+
+    //Quick test to see if android usb is working
+    public void arduinoTest(View view) {
+        int temp = arduino.write("1");
+        if(temp == -1) {
+            arduino = new Arduino(getApplicationContext());
+            t1.speak("Arduino failure", TextToSpeech.QUEUE_ADD, null);
+        }
+        t1.speak(Integer.toString(temp), TextToSpeech.QUEUE_ADD, null);
     }
 
     /*

@@ -42,14 +42,23 @@
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/direction_input"
             android:hint="Speak your destination"
             android:layout_weight="1"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Test Arduino"
+            android:layout_marginLeft="10dp"
+            android:onClick="arduinoTest"
+            />
     </LinearLayout>
+
 
 
     <ImageButton
