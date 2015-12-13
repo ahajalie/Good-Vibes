@@ -331,9 +331,6 @@ public class MainActivity extends AppCompatActivity implements
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -480,6 +477,12 @@ public class MainActivity extends AppCompatActivity implements
     public void onStart() {
         super.onStart();
         googleApiClient.connect();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        t1.speak("Please tap the screen and speak your destination. Ask for help for more details.", TextToSpeech.QUEUE_ADD, null);
     }
 
     @Override

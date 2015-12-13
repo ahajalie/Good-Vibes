@@ -20,10 +20,13 @@ import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -34,6 +37,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -79,6 +83,9 @@ public class Directions extends AppCompatActivity implements
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        //keep te screen on
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         // Good Vibes Code //
         // Initialization
         bestAccuracy = null; // on new http
@@ -91,8 +98,7 @@ public class Directions extends AppCompatActivity implements
             route = new Route(response); // Todo: Exits out of app when route is too long (too much memory?)
         } catch (JSONException e) {
             Log.e("GoodVibes", "JSON exception", e);
-            Intent intent = new Intent(context, MainActivity.class);
-            startActivity(intent);
+            finish();
         }
 
         // Set up Location Request to periodically update currentLocation
@@ -214,15 +220,16 @@ public class Directions extends AppCompatActivity implements
 
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, "en-US");
 
-                try {
-                    t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
-                    startActivityForResult(intent, RESULT_SPEECH);
-                } catch (ActivityNotFoundException a) {
-                    Toast t = Toast.makeText(getApplicationContext(),
-                            "Oops! Your device doesn't support Speech to Text",
-                            Toast.LENGTH_SHORT);
-                    t.show();
-                }
+//                try {
+//                    t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
+//                    startActivityForResult(intent, RESULT_SPEECH);
+//                } catch (ActivityNotFoundException a) {
+//                    Toast t = Toast.makeText(getApplicationContext(),
+//                            "Oops! Your device doesn't support Speech to Text",
+//                            Toast.LENGTH_SHORT);
+//                    t.show();
+//                }
+                redoRequest();
             }
         });
 
@@ -413,35 +420,70 @@ public class Directions extends AppCompatActivity implements
         } else if (newLocation.getAccuracy() < bestAccuracy - 10) {
             bestAccuracy = newLocation.getAccuracy();
             // Todo: MAKE NEW HTTP REQUEST HERE ALIE
+            redoRequest();
             // Make sure it has time to finish request and construct data structures, or else
             //   multithreaded access to shared data = must synchronize
             // Also there are a shitton of state variables you have to update
         } else if (distanceToNextPoint - minDistanceToNextPoint > 50) {
             // Todo: MAKE NEW HTTP REQUEST HERE TOO ALIE
+            redoRequest();
         }
-//        try {
-//            GoogleApi.getInstance(context).makeDirectionsHttpRequest(currentLocation, destination, new Response.Listener<JSONObject>() {
-//                @Override
-//                public void onResponse(JSONObject response) {
-//                    String status = "";
-//                    try {
-//                        status = response.getString("status");
-//                    } catch(JSONException e) {
-//                        Log.e("GoodVibes", "JSON exception", e);
-//                    }
-//                    if (status.equals("OK")) {
-//                        response = response;
-//                    }
-//                }
-//            }, new Response.ErrorListener() {
-//                @Override
-//                public void onErrorResponse(VolleyError error) {
-//
-//                }
-//            });
-//        } catch (UnsupportedEncodingException e) {
-//            Log.e("GoodVibes", "Unsupported Encoding exception", e);
-//        }
+    }
+
+    void redoRequest() {
+        try {
+            GoogleApi.getInstance(this).makeDirectionsHttpRequest(currentLocation, destination, new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject newResponse) {
+                    String status = "";
+                    try {
+                        status = newResponse.getString("status");
+
+                    } catch(JSONException e) {
+                        Log.e("GoodVibes", "JSON exception", e);
+                        Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+                        t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                        toast.show();
+                    }
+                    switch (status) {
+                        case "OK":
+                            response = newResponse;
+                            try {
+                                route = new Route(response);
+                            }
+                            catch(JSONException e) {
+                                Log.e("GoodVibes", "JSON exception", e);
+                                Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+                                t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                                toast.show();
+                            }
+                            information = new String();
+                            information += "Location: " + route.endAddress + "." + "\n";
+                            information += "Distance: " + addUnit(route.distanceText) + "." + "\n";
+                            information += "Time: " + addUnit(route.durationText) + "." + "\n";
+                            textView0.setText(information);
+                            break;
+                        case "NOT_FOUND":
+                        default:
+                            Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT).show();
+                            t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                            break;
+                    }
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+                    t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                    toast.show();
+                }
+            });
+        } catch (UnsupportedEncodingException e) {
+            Log.e("GoodVibes", "Unsupported Encoding exception", e);
+            Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+            t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+            toast.show();
+        }
     }
 
     float getAvgAzimuth(ArrayList<Float> azimuthList) {
