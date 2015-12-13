@@ -483,6 +483,12 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        t1.speak("Please tap the screen and speak your destination. Ask for help for more details.", TextToSpeech.QUEUE_ADD, null);
+    }
+
+    @Override
     public void onStop() {
         super.onStop();
         googleApiClient.disconnect();
