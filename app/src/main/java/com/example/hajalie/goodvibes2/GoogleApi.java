@@ -35,6 +35,8 @@ public class GoogleApi {
     private final String API_KEY = "AIzaSyAypAdSyp1m-Vwg1H0pbKAVTuFrhkhrE_c";
     String directionsURL;
     private static RequestQueue requestQueue = null;
+    private static RequestQueue requestQueue0 = null;
+    private String coordinates = "NULL";
     private static GoogleApi instance = null;
 
     private GoogleApi() {
@@ -43,6 +45,7 @@ public class GoogleApi {
     public static GoogleApi getInstance(Context context) {
         if (instance == null) {
             requestQueue = Volley.newRequestQueue(context.getApplicationContext());
+            requestQueue0 = Volley.newRequestQueue(context.getApplicationContext());
             instance = new GoogleApi();
         }
         return instance;
@@ -58,42 +61,52 @@ public class GoogleApi {
         String destinationEncoded = URLEncoder.encode(destination, "UTF-8");
         //directionsURL += "&destination=" + destinationEncoded;
         directionsURL += "&mode=walking";
+        directionsURL += "&destination=" + destination;
+        // Request a string response from the provided URL.
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, directionsURL, null,
+                responseListener, errorListener);
+        // Add the request to the RequestQueue.
+        requestQueue.add(jsonObjectRequest);
+    }
+
+    /*
+    * Returns a string that contains the coordinates for the place
+    * */
+    public String makePlacesAPIRequest(final Location location, final String destination,
+                                       final Response.Listener<JSONObject> responseListener,
+                                       final Response.ErrorListener errorListener) throws UnsupportedEncodingException {
+        String destinationEncoded = URLEncoder.encode(destination, "UTF-8");
         String placesURL = PLACES_API_URL + location.getLatitude() + "," + location.getLongitude();
         placesURL += "&query=" + destinationEncoded;
         placesURL += "&radius=1600";
         placesURL += "&key=" + API_KEY;
-        JsonObjectRequest jsonObjectRequest0 = new JsonObjectRequest(Request.Method.GET, placesURL, null,
-        new Response.Listener<JSONObject>() {
-            @Override
-            public void onResponse(JSONObject response) {
-                try {
-                    JSONObject location = response.getJSONArray("results").getJSONObject(0).getJSONObject("geometry").getJSONObject("location");
-                    String coordinates = location.getString("lat") + "," + location.getString("lng");
-                    directionsURL += "&destination=" + coordinates;
-                    // Request a string response from the provided URL.
-                    JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, directionsURL, null,
-                            responseListener, errorListener);
-                    // Add the request to the RequestQueue.
-                    if(response.getString("status").equals("OK")) {
-                        requestQueue.add(jsonObjectRequest);
-                    }
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    directionsURL += "&destination=" + "ahiodsasahushudhusdhusdgusdguifdhufd";
-                    JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, directionsURL, null,
-                            responseListener, errorListener);
-                    requestQueue.add(jsonObjectRequest);
-
-
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                VolleyLog.e("Error: ", error.getMessage());
-            }
-        });
-        requestQueue.add(jsonObjectRequest0);
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, placesURL, null,
+                responseListener, errorListener);
+        // Add the request to the RequestQueue.
+        requestQueue.add(jsonObjectRequest);
+//        JsonObjectRequest jsonObjectRequest0 = new JsonObjectRequest(Request.Method.GET, placesURL, null,
+//                new Response.Listener<JSONObject>() {
+//                    @Override
+//                    public void onResponse(JSONObject response) {
+//                        try {
+//                            JSONObject location = response.getJSONArray("results").getJSONObject(0).getJSONObject("geometry").getJSONObject("location");
+//                            coordinates = location.getString("lat") + "," + location.getString("lng");
+//
+//                        } catch (JSONException e) {
+//                            coordinates = "NULL";
+//
+//
+//                        }
+//                    }
+//                }, new Response.ErrorListener() {
+//            @Override
+//            public void onErrorResponse(VolleyError error) {
+//                VolleyLog.e("Error: ", error.getMessage());
+//                coordinates = "NULL";
+//            }
+//        });
+        requestQueue.add(jsonObjectRequest);
+        Log.d("PLACESAPI" , "coordinates: " + coordinates);
+        return coordinates;
     }
 }

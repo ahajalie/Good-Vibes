@@ -11,6 +11,7 @@ public class Values {
     static final String DESTINATION_ERROR = "ERROR: Invalid destination.";
     static final String PATH_ERROR = "ERROR: No paths for this destination.";
     static final String ARRIVE_AT_DESTINATION = "Congratulations! You have arrived at your destination.";
+    static final String PLACES_ERROR = "Error: Could not find your destination";
     static final int    FRONT = 0,
                         FRONT_RIGHT = 1,
                         RIGHT = 2,

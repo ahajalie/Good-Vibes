@@ -379,8 +379,50 @@ public class MainActivity extends AppCompatActivity implements
             toast.show();
             return;
         }
+
         final String destination = str;
+        placesRequest(location, destination);
+//        directionsRequest(location, destination);
+        //Make Places API Request
         // Make API request
+
+    }
+
+    public void placesRequest(final Location location, final String destination) {
+        try {
+            GoogleApi.getInstance(this).makePlacesAPIRequest(location, destination, new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject response) {
+                    String coordinates = "";
+                    try {
+                        JSONObject loc = response.getJSONArray("results").getJSONObject(0).getJSONObject("geometry").getJSONObject("location");
+                        coordinates = loc.getString("lat") + "," + loc.getString("lng");
+                        directionsRequest(location, destination);
+
+                    } catch(JSONException e) {
+                        Log.e("placesRequest", "JSON exception", e);
+                        Toast toast = Toast.makeText(context, Values.PLACES_ERROR, Toast.LENGTH_SHORT);
+                        t1.speak(Values.PLACES_ERROR, TextToSpeech.QUEUE_ADD, null);
+                        toast.show();
+                    }
+                }
+            }, new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+                    t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                    toast.show();
+                }
+            });
+        } catch (UnsupportedEncodingException e) {
+            Log.e("GoodVibes", "Unsupported Encoding exception", e);
+            Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+            t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+            toast.show();
+        }
+    }
+
+    public void directionsRequest(final Location location, final String destination) {
         try {
             GoogleApi.getInstance(this).makeDirectionsHttpRequest(location, destination, new Response.Listener<JSONObject>() {
                 @Override
@@ -400,7 +442,6 @@ public class MainActivity extends AppCompatActivity implements
                             intent.putExtra("location", location);
                             intent.putExtra("destination", destination);
                             intent.putExtra("response", response.toString());
-                            startActivity(intent);
                             break;
                         case "NOT_FOUND":
                             Toast.makeText(context, Values.DESTINATION_ERROR, Toast.LENGTH_SHORT).show();
