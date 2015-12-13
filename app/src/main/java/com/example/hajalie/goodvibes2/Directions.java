@@ -220,16 +220,16 @@ public class Directions extends AppCompatActivity implements
 
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, "en-US");
 
-//                try {
-//                    t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
-//                    startActivityForResult(intent, RESULT_SPEECH);
-//                } catch (ActivityNotFoundException a) {
-//                    Toast t = Toast.makeText(getApplicationContext(),
-//                            "Oops! Your device doesn't support Speech to Text",
-//                            Toast.LENGTH_SHORT);
-//                    t.show();
-//                }
-                redoRequest();
+                try {
+                    t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
+                    startActivityForResult(intent, RESULT_SPEECH);
+                } catch (ActivityNotFoundException a) {
+                    Toast t = Toast.makeText(getApplicationContext(),
+                            "Oops! Your device doesn't support Speech to Text",
+                            Toast.LENGTH_SHORT);
+                    t.show();
+                }
+//                redoRequest();
             }
         });
 
