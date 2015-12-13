@@ -60,7 +60,6 @@ public class Directions extends AppCompatActivity implements
     private Sensor accelerometer;
     private Sensor magnetometer;
     private ArrayList<Float> azimuthList;
-    private float azimuth; // may need sync
     private float bearing;
     private float direction;
     private Timer timer;
@@ -101,6 +100,7 @@ public class Directions extends AppCompatActivity implements
         locationRequest.setInterval(2500);
         locationRequest.setFastestInterval(2000);
         locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
 
 
         // Manage text views
@@ -550,6 +550,7 @@ public class Directions extends AppCompatActivity implements
                 float orientation[] = new float[3];
                 SensorManager.getOrientation(R, orientation);
                 // orientation contains: azimuth, pitch and roll
+                float azimuth = 0f;
                 if (orientation[0] < 0) {
                     azimuth = 2 * (float)Math.PI + orientation[0];
                 } else {
