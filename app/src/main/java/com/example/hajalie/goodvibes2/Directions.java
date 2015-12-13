@@ -165,39 +165,45 @@ public class Directions extends AppCompatActivity implements
                     @SuppressWarnings("unchecked")
                     public void run() {
                         try {
+                            int vibeDir;
                             synchronized (directionLock) {
                                 vibrate();
-                                int vibeDir = (int) ((direction + (Math.PI / 8)) / (Math.PI / 4));
-                                if (vibeDir < 0 || vibeDir > 8) vibrateBelt(Values.ALL_DIRECTIONS);
-                                switch (vibeDir) {
-                                    case (0):
-                                        vibrateBelt(Values.FRONT);
-                                        break;
-                                    case (1):
-                                        vibrateBelt(Values.FRONT_RIGHT);
-                                        break;
-                                    case (2):
-                                        vibrateBelt(Values.RIGHT);
-                                        break;
-                                    case (3):
-                                        vibrateBelt(Values.BACK_RIGHT);
-                                        break;
-                                    case (4):
-                                        vibrateBelt(Values.BACK);
-                                        break;
-                                    case (5):
-                                        vibrateBelt(Values.BACK_LEFT);
-                                        break;
-                                    case (6):
-                                        vibrateBelt(Values.LEFT);
-                                        break;
-                                    case (7):
-                                        vibrateBelt(Values.FRONT_LEFT);
-                                        break;
-                                    case (8):
-                                        vibrateBelt(Values.FRONT);
-                                        break;
+                                direction = bearing - getAvgAzimuth(azimuthList); // Todo: True vs. magnetic north
+                                if (direction < 0) {
+                                    direction += 2 * (float) Math.PI;
                                 }
+                                vibeDir = (int) ((direction + (Math.PI / 8)) / (Math.PI / 4));
+                                if (vibeDir < 0 || vibeDir > 8) vibrateBelt(Values.ALL_DIRECTIONS);
+                                textView4.setText("Angle to point: " + Float.toString(direction));
+                            }
+                            switch (vibeDir) {
+                                case (0):
+                                    vibrateBelt(Values.FRONT);
+                                    break;
+                                case (1):
+                                    vibrateBelt(Values.FRONT_RIGHT);
+                                    break;
+                                case (2):
+                                    vibrateBelt(Values.RIGHT);
+                                    break;
+                                case (3):
+                                    vibrateBelt(Values.BACK_RIGHT);
+                                    break;
+                                case (4):
+                                    vibrateBelt(Values.BACK);
+                                    break;
+                                case (5):
+                                    vibrateBelt(Values.BACK_LEFT);
+                                    break;
+                                case (6):
+                                    vibrateBelt(Values.LEFT);
+                                    break;
+                                case (7):
+                                    vibrateBelt(Values.FRONT_LEFT);
+                                    break;
+                                case (8):
+                                    vibrateBelt(Values.FRONT);
+                                    break;
                             }
                         }
                         catch (Exception e) {
@@ -398,20 +404,14 @@ public class Directions extends AppCompatActivity implements
             }
         }
 
-        // Determine bearings and vibrate in desired direction
+        // Determine bearings
         synchronized (directionLock) {
             bearing = currentLocation.bearingTo(targetLocation);
             if (bearing < 0) {
                 bearing += 360;
             }
             bearing = bearing * (float) Math.PI / 180;
-            direction = bearing - getAvgAzimuth(azimuthList);
-            if (direction < 0) {
-                direction += 2 * (float) Math.PI;
-            }
-            // Todo: Improve accuracy - azimuth measurement, and true vs. magnetic north
             textView3.setText("Bearing: " + Float.toString(bearing));
-            textView4.setText("Angle to point: " + Float.toString(direction));
         }
 
         // Make new API request if necessary
