@@ -49,15 +49,6 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
-    public int  FRONT = 0,
-                FRONT_RIGHT = 1,
-                RIGHT = 2,
-                BACK_RIGHT = 3,
-                BACK = 4,
-                BACK_LEFT = 5,
-                LEFT = 6,
-                FRONT_LEFT = 7;
-
     private ImageButton btnSpeak;
     private TextView txtText;
     Arduino arduino;
@@ -143,7 +134,6 @@ public class MainActivity extends AppCompatActivity implements
                 }
             }
         });
-
     }
 
     // Vibrate the belt in a specific direction
@@ -151,28 +141,28 @@ public class MainActivity extends AppCompatActivity implements
         Integer vibeDir = -1;
         switch (view.getId()) {
             case (R.id.vib0):
-                vibeDir = FRONT;
+                vibeDir = Values.FRONT;
                 break;
             case (R.id.vib1):
-                vibeDir = FRONT_RIGHT;
+                vibeDir = Values.FRONT_RIGHT;
                 break;
             case (R.id.vib2):
-                vibeDir = RIGHT;
+                vibeDir = Values.RIGHT;
                 break;
             case (R.id.vib3):
-                vibeDir = BACK_RIGHT;
+                vibeDir = Values.BACK_RIGHT;
                 break;
             case (R.id.vib4):
-                vibeDir = BACK;
+                vibeDir = Values.BACK;
                 break;
             case (R.id.vib5):
-                vibeDir = BACK_LEFT;
+                vibeDir = Values.BACK_LEFT;
                 break;
             case (R.id.vib6):
-                vibeDir = LEFT;
+                vibeDir = Values.LEFT;
                 break;
             case (R.id.vib7):
-                vibeDir = FRONT_LEFT;
+                vibeDir = Values.FRONT_LEFT;
                 break;
         }
         int temp = arduino.write(vibeDir.toString());
