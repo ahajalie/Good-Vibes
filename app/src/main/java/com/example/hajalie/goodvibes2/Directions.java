@@ -46,7 +46,7 @@ public class Directions extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         LocationListener, SensorEventListener {
 
-    private final Context context = getApplicationContext();
+    private final Context context = this;
     private final Object directionLock = new Object();
     private boolean requestingLocationUpdates = false;
     private boolean finished = false;
@@ -292,28 +292,13 @@ public class Directions extends AppCompatActivity implements
     // Information for each step along the route
     private class Step {
         String htmlInstructions;
-        double startLat, startLng;
         double endLat, endLng;
-        long durationValue;
-        String durationText;
-        long distanceValue;
-        String distanceText;
 
         Step (JSONObject step) throws JSONException {
             htmlInstructions = step.getString("html_instructions");
-            JSONObject object;
-            object = step.getJSONObject("start_location");
-            startLat = object.getDouble("lat");
-            startLng = object.getDouble("lng");
-            object = step.getJSONObject("end_location");
+            JSONObject object = step.getJSONObject("end_location");
             endLat = object.getDouble("lat");
             endLng = object.getDouble("lng");
-            object = step.getJSONObject("duration");
-            durationValue = object.getLong("value");
-            durationText = object.getString("text");
-            object = step.getJSONObject("distance");
-            distanceValue = object.getLong("value");
-            distanceText = object.getString("text");
         }
     }
 
@@ -321,49 +306,25 @@ public class Directions extends AppCompatActivity implements
     // Set to the first route returned by the API call
     // Assumes no waypoints (single leg)
     private class Route {
-        String startAddress;
         String endAddress;
-        double startLat, startLng;
-        double endLat, endLng;
-        long durationValue;
         String durationText;
-        long distanceValue;
         String distanceText;
         ArrayList<Step> steps;
         int numSteps;
         int currentStep;
 
         Route (JSONObject response) throws JSONException {
-            JSONArray routes;
-            JSONObject route;
-            routes = response.getJSONArray("routes");
-            route = routes.getJSONObject(0);
-            JSONArray legs;
-            JSONObject leg;
-            legs = route.getJSONArray("legs");
-            leg = legs.getJSONObject(0);
-            startAddress = leg.getString("start_address");
+            JSONObject route, leg, step;
+            route = response.getJSONArray("routes").getJSONObject(0);
+            leg = route.getJSONArray("legs").getJSONObject(0);
             endAddress = leg.getString("end_address");
-            JSONObject object;
-            object = leg.getJSONObject("start_location");
-            startLat = object.getDouble("lat");
-            startLng = object.getDouble("lng");
-            object = leg.getJSONObject("end_location");
-            endLat = object.getDouble("lat");
-            endLng = object.getDouble("lng");
-            object = leg.getJSONObject("duration");
-            durationValue = object.getLong("value");
-            durationText = object.getString("text");
-            object = leg.getJSONObject("distance");
-            distanceValue = object.getLong("value");
-            distanceText = object.getString("text");
+            durationText = leg.getJSONObject("duration").getString("text");
+            distanceText = leg.getJSONObject("distance").getString("text");
             JSONArray steps = leg.getJSONArray("steps");
-            JSONObject step;
             this.steps = new ArrayList<Step>();
             for (int i = 0; i < steps.length(); i++) {
                 step = steps.getJSONObject(i);
-                Step newStep = new Step(step);
-                this.steps.add(newStep);
+                this.steps.add(new Step(step));
             }
             numSteps = this.steps.size();
             currentStep = 0;
