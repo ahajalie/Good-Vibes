@@ -397,7 +397,7 @@ public class MainActivity extends AppCompatActivity implements
                     try {
                         JSONObject loc = response.getJSONArray("results").getJSONObject(0).getJSONObject("geometry").getJSONObject("location");
                         coordinates = loc.getString("lat") + "," + loc.getString("lng");
-                        directionsRequest(location, destination);
+                        directionsRequest(location, coordinates);
 
                     } catch(JSONException e) {
                         Log.e("placesRequest", "JSON exception", e);
@@ -442,6 +442,7 @@ public class MainActivity extends AppCompatActivity implements
                             intent.putExtra("location", location);
                             intent.putExtra("destination", destination);
                             intent.putExtra("response", response.toString());
+                            startActivity(intent);
                             break;
                         case "NOT_FOUND":
                             Toast.makeText(context, Values.DESTINATION_ERROR, Toast.LENGTH_SHORT).show();

@@ -46,7 +46,7 @@ public class Directions extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         LocationListener, SensorEventListener {
 
-    private final Context context = getApplicationContext();
+    private final Context context = this;
     private final Object directionLock = new Object();
     private boolean requestingLocationUpdates = false;
     private boolean finished = false;
