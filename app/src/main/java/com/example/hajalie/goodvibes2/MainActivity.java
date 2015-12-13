@@ -269,6 +269,7 @@ public class MainActivity extends AppCompatActivity implements
         else {
             t1.speak("Your Destination is" + str, TextToSpeech.QUEUE_FLUSH, null);
             txtText.setText(str);
+            Log.d("PROCESSVOICE", "hello!");
             checkDestination(str);
         }
     }
@@ -379,16 +380,16 @@ public class MainActivity extends AppCompatActivity implements
             toast.show();
             return;
         }
-
+        Log.d("CHECKDESTINATION", "hello!");
         final String destination = str;
         placesRequest(location, destination);
-//        directionsRequest(location, destination);
         //Make Places API Request
         // Make API request
 
     }
 
     public void placesRequest(final Location location, final String destination) {
+        Log.d("PLACESREQUEST", "hello!");
         try {
             GoogleApi.getInstance(this).makePlacesAPIRequest(location, destination, new Response.Listener<JSONObject>() {
                 @Override
@@ -423,6 +424,7 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     public void directionsRequest(final Location location, final String destination) {
+        Log.d("DIRECTIONSREQUEST", "hello!");
         try {
             GoogleApi.getInstance(this).makeDirectionsHttpRequest(location, destination, new Response.Listener<JSONObject>() {
                 @Override

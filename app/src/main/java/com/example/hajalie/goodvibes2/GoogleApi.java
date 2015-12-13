@@ -83,7 +83,7 @@ public class GoogleApi {
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, placesURL, null,
                 responseListener, errorListener);
         // Add the request to the RequestQueue.
-        requestQueue.add(jsonObjectRequest);
+//        requestQueue.add(jsonObjectRequest);
 //        JsonObjectRequest jsonObjectRequest0 = new JsonObjectRequest(Request.Method.GET, placesURL, null,
 //                new Response.Listener<JSONObject>() {
 //                    @Override
