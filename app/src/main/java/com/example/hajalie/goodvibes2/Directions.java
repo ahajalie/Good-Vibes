@@ -246,10 +246,7 @@ public class Directions extends AppCompatActivity implements
 
     // Vibrate belt in specific direction
     public void vibrateBelt(Integer vibeDir) {
-        int temp = arduino.write(vibeDir.toString());
-        if(temp == -1) {
-            arduino = new Arduino(getApplicationContext());
-        }
+        arduino.write(vibeDir.toString());
     }
 
     /**
@@ -404,15 +401,8 @@ public class Directions extends AppCompatActivity implements
             }
         }
 
-        // Determine bearings
-        synchronized (directionLock) {
-            bearing = currentLocation.bearingTo(targetLocation);
-            if (bearing < 0) {
-                bearing += 360;
-            }
-            bearing = bearing * (float) Math.PI / 180;
-            textView3.setText("Bearing: " + Float.toString(bearing));
-        }
+        // Update bearing
+        updateBearing(targetLocation);
 
         // Make new API request if necessary
         if (bestAccuracy == null) {
@@ -427,6 +417,18 @@ public class Directions extends AppCompatActivity implements
         } else if (distanceToNextPoint - minDistanceToNextPoint > 50) {
             // Todo: MAKE NEW HTTP REQUEST HERE TOO ALIE
             redoRequest();
+        }
+    }
+
+    private void updateBearing(Location targetLocation) {
+        // Determine bearings
+        synchronized (directionLock) {
+            bearing = currentLocation.bearingTo(targetLocation);
+            if (bearing < 0) {
+                bearing += 360;
+            }
+            bearing = bearing * (float) Math.PI / 180;
+            textView3.setText("Bearing: " + Float.toString(bearing));
         }
     }
 
@@ -457,6 +459,9 @@ public class Directions extends AppCompatActivity implements
                                 t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
                                 toast.show();
                             }
+                            updateBearing(route.getTargetLocation());
+                            bestAccuracy = null;
+                            minDistanceToNextPoint = Float.MAX_VALUE;
                             information = new String();
                             information += "Location: " + route.endAddress + "." + "\n";
                             information += "Distance: " + addUnit(route.distanceText) + "." + "\n";
