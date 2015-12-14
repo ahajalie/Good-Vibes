@@ -188,6 +188,8 @@ public class Directions extends AppCompatActivity implements
 
         //This code sets up input so that touching the screen causes the voice input to start
         LinearLayout linearlayout = (LinearLayout) findViewById(R.id.directions_layout);
+        linearlayout.setVisibility(LinearLayout.GONE);
+        linearlayout.setVisibility(LinearLayout.VISIBLE);
         linearlayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -308,6 +310,25 @@ public class Directions extends AppCompatActivity implements
                             MainActivity.containsWord(response, "test") &&
                             MainActivity.containsWord(response, "menu") ) {
                         //DISABLE STUFF
+                        if(textView0.getVisibility() == TextView.VISIBLE) {
+                            textView0.setVisibility(TextView.GONE);
+                            textView1.setVisibility(TextView.GONE);
+                            textView2.setVisibility(TextView.GONE);
+                            textView3.setVisibility(TextView.GONE);
+                            textView4.setVisibility(TextView.GONE);
+                            textView5.setVisibility(TextView.GONE);
+                            textView6.setVisibility(TextView.GONE);
+                        }
+                        else {
+                            textView0.setVisibility(TextView.VISIBLE);
+                            textView1.setVisibility(TextView.VISIBLE);
+                            textView2.setVisibility(TextView.VISIBLE);
+                            textView3.setVisibility(TextView.VISIBLE);
+                            textView4.setVisibility(TextView.VISIBLE);
+                            textView5.setVisibility(TextView.VISIBLE);
+                            textView6.setVisibility(TextView.VISIBLE);
+
+                        }
                     }
                 }
                 break;
