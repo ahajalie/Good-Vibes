@@ -453,8 +453,6 @@ public class MainActivity extends AppCompatActivity implements
                                 JSONObject leg = response.getJSONArray("routes").getJSONObject(0)
                                         .getJSONArray("legs").getJSONObject(0);
                                 Integer numSteps = leg.getJSONArray("steps").length();
-                                Toast.makeText(context, numSteps.toString(), Toast.LENGTH_SHORT).show();
-                                t1.speak(numSteps.toString(), TextToSpeech.QUEUE_ADD, null);
                                 if (numSteps > 400) {
                                     Toast.makeText(context, Values.ROUTE_TOO_LONG, Toast.LENGTH_SHORT).show();
                                     t1.speak(Values.ROUTE_TOO_LONG, TextToSpeech.QUEUE_ADD, null);
@@ -466,7 +464,6 @@ public class MainActivity extends AppCompatActivity implements
                                     t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
                                     startActivity(intent);
                                 }
-
                             } catch (JSONException e) {
                                 Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT).show();
                                 t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);

@@ -51,7 +51,6 @@ public class Directions extends AppCompatActivity implements
     private final Object directionLock = new Object();
     private boolean requestingLocationUpdates = false;
     private boolean finished = false;
-    private JSONObject response;
     private Route route; // may need sync
     private Location currentLocation; // may need sync
     private String destination;
@@ -68,6 +67,7 @@ public class Directions extends AppCompatActivity implements
     private Float bestAccuracy;
     private Float minDistanceToNextPoint;
     private boolean paused = false;
+    private boolean makeNewHttpRequest = false;
     TextToSpeech t1;
     protected static final int RESULT_SPEECH = 1;
     private TextView textView0, textView1, textView2, textView3, textView4, textView5, textView6;
@@ -92,7 +92,7 @@ public class Directions extends AppCompatActivity implements
         destination = getIntent().getExtras().getString("destination");
         currentLocation = (Location) getIntent().getExtras().get("location");
         try {
-            response = new JSONObject(getIntent().getExtras().getString("response"));
+            JSONObject response = new JSONObject(getIntent().getExtras().getString("response"));
             route = new Route(response); // Todo: Exits out of app when route is too long (too much memory?)
         } catch (JSONException e) {
             Log.e("GoodVibes", "JSON exception", e);
@@ -416,14 +416,15 @@ public class Directions extends AppCompatActivity implements
         } else if (newLocation.getAccuracy() < bestAccuracy - 10) {
             bestAccuracy = newLocation.getAccuracy();
             // Todo: MAKE NEW HTTP REQUEST HERE ALIE
-            redoRequest();
+            makeNewHttpRequest = true;
             // Make sure it has time to finish request and construct data structures, or else
             //   multithreaded access to shared data = must synchronize
             // Also there are a shitton of state variables you have to update
         } else if (distanceToNextPoint - minDistanceToNextPoint > 50) {
             // Todo: MAKE NEW HTTP REQUEST HERE TOO ALIE
-            redoRequest();
+            makeNewHttpRequest = true;
         }
+        redoRequest();
     }
 
     private void updateBearing(Location targetLocation) {
@@ -439,60 +440,57 @@ public class Directions extends AppCompatActivity implements
     }
 
     void redoRequest() {
-        try {
-            GoogleApi.getInstance(this).makeDirectionsHttpRequest(currentLocation, destination, new Response.Listener<JSONObject>() {
-                @Override
-                public void onResponse(JSONObject newResponse) {
-                    String status = "";
-                    try {
-                        status = newResponse.getString("status");
-                    } catch(JSONException e) {
-                        Log.e("GoodVibes", "JSON exception", e);
-                        Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
-                        t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
-                        toast.show();
+        if (makeNewHttpRequest) {
+            try {
+                GoogleApi.getInstance(this).makeDirectionsHttpRequest(currentLocation, destination, new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject newResponse) {
+                        String status = "";
+                        try {
+                            status = newResponse.getString("status");
+                        } catch(JSONException e) {
+                            Toast.makeText(context, "HTTP redo failure 1", Toast.LENGTH_SHORT).show();
+                            Log.e("GoodVibes", "JSON exception", e);
+                        }
+                        switch (status) {
+                            case "OK":
+                                try {
+                                    JSONObject leg = newResponse.getJSONArray("routes").getJSONObject(0)
+                                            .getJSONArray("legs").getJSONObject(0);
+                                    route = new Route(leg);
+                                    makeNewHttpRequest = false;
+                                    Toast.makeText(context, "HTTP redo success", Toast.LENGTH_SHORT).show();
+                                }
+                                catch(JSONException e) {
+                                    Toast.makeText(context, "HTTP redo failure 2", Toast.LENGTH_SHORT).show();
+                                    Log.e("GoodVibes", "JSON exception", e);
+                                }
+                                updateBearing(route.getTargetLocation());
+                                bestAccuracy = null;
+                                minDistanceToNextPoint = Float.MAX_VALUE;
+                                information = new String();
+                                information += "Location: " + route.endAddress + "." + "\n";
+                                information += "Distance: " + addUnit(route.distanceText) + "." + "\n";
+                                information += "Time: " + addUnit(route.durationText) + "." + "\n";
+                                textView0.setText(information);
+                                break;
+                            default:
+                                Toast.makeText(context, "HTTP redo failure3", Toast.LENGTH_SHORT).show();
+                                Log.e("GoodVibes", "HTTP request failed");
+                                break;
+                        }
                     }
-                    switch (status) {
-                        case "OK":
-                            response = newResponse;
-                            try {
-                                route = new Route(response);
-                            }
-                            catch(JSONException e) {
-                                Log.e("GoodVibes", "JSON exception", e);
-                                Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
-                                t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
-                                toast.show();
-                            }
-                            updateBearing(route.getTargetLocation());
-                            bestAccuracy = null;
-                            minDistanceToNextPoint = Float.MAX_VALUE;
-                            information = new String();
-                            information += "Location: " + route.endAddress + "." + "\n";
-                            information += "Distance: " + addUnit(route.distanceText) + "." + "\n";
-                            information += "Time: " + addUnit(route.durationText) + "." + "\n";
-                            textView0.setText(information);
-                            break;
-                        case "NOT_FOUND":
-                        default:
-                            Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT).show();
-                            t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
-                            break;
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Toast.makeText(context, "HTTP redo failure 4", Toast.LENGTH_SHORT).show();
+                        Log.e("GoodVibes", "HTTP request failed");
                     }
-                }
-            }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
-                    t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
-                    toast.show();
-                }
-            });
-        } catch (UnsupportedEncodingException e) {
-            Log.e("GoodVibes", "Unsupported Encoding exception", e);
-            Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
-            t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
-            toast.show();
+                });
+            } catch (UnsupportedEncodingException e) {
+                Toast.makeText(context, "HTTP redo failure 5", Toast.LENGTH_SHORT).show();
+                Log.e("GoodVibes", "Unsupported Encoding exception");
+            }
         }
     }
 
