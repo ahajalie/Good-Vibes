@@ -83,6 +83,14 @@ public class MainActivity extends AppCompatActivity implements
 //            }
 //        });
         arduino = new Arduino(getApplicationContext());
+        LinearLayout ll = (LinearLayout) findViewById(R.id.testButtonsLayout);
+        LinearLayout ll2 = (LinearLayout) findViewById(R.id.testLine);
+        LinearLayout mainlayout = (LinearLayout) findViewById(R.id.mainLayout);
+        ll.setVisibility(LinearLayout.GONE);
+        ll2.setVisibility(LinearLayout.GONE);
+        mainlayout.setVisibility(LinearLayout.GONE);
+        mainlayout.setVisibility(LinearLayout.VISIBLE);
+
 //        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         preferences = getApplicationContext().getSharedPreferences("preferences", 0);
         editor = preferences.edit();
@@ -249,6 +257,9 @@ public class MainActivity extends AppCompatActivity implements
                 if(interval > 50) {
                     interval = 50;
                 }
+                if(interval < 1) {
+                    interval = 1;
+                }
                 editor.putFloat("interval", interval);
                 editor.commit();
                 t1.speak("Interval set to " + Float.toString(interval) + "seconds", TextToSpeech.QUEUE_FLUSH, null);
@@ -276,7 +287,15 @@ public class MainActivity extends AppCompatActivity implements
         }
         else if(containsWord(str, "hidden") && containsWord(str, "test") && containsWord(str, "menu")) {
             LinearLayout ll = (LinearLayout) findViewById(R.id.testButtonsLayout);
-            ll.setMinimumHeight(100);
+            LinearLayout ll2 = (LinearLayout) findViewById(R.id.testLine);
+            if(ll.getVisibility() == LinearLayout.GONE) {
+                ll.setVisibility(LinearLayout.VISIBLE);
+                ll2.setVisibility(LinearLayout.VISIBLE);
+            }
+            else {
+                ll.setVisibility(LinearLayout.GONE);
+                ll2.setVisibility(LinearLayout.GONE);
+            }
         }
         else {
             t1.speak("Your Destination is" + str, TextToSpeech.QUEUE_FLUSH, null);

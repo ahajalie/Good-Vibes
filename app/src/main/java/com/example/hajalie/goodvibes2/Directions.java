@@ -115,6 +115,15 @@ public class Directions extends AppCompatActivity implements
         textView4 = (TextView) findViewById(R.id.direction_output4);
         textView5 = (TextView) findViewById(R.id.direction_output5);
         textView6 = (TextView) findViewById(R.id.direction_output6);
+        textView0.setVisibility(TextView.GONE);
+        textView1.setVisibility(TextView.GONE);
+        textView2.setVisibility(TextView.GONE);
+        textView3.setVisibility(TextView.GONE);
+        textView4.setVisibility(TextView.GONE);
+        textView5.setVisibility(TextView.GONE);
+        textView6.setVisibility(TextView.GONE);
+
+
         //swapped textviews so that info is on top
         textView1.setText(Html.fromHtml(route.getTargetStep().htmlInstructions));
         information = new String();
@@ -294,6 +303,11 @@ public class Directions extends AppCompatActivity implements
                             SystemClock.sleep(100);
                         }
                         finish();
+                    }
+                    else if(MainActivity.containsWord(response, "hidden") &&
+                            MainActivity.containsWord(response, "test") &&
+                            MainActivity.containsWord(response, "menu") ) {
+                        //DISABLE STUFF
                     }
                 }
                 break;
