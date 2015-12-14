@@ -145,7 +145,7 @@ public class Directions extends AppCompatActivity implements
             public void onInit(int status) {
                 if(status != TextToSpeech.ERROR) {
                     t1.setLanguage(Locale.US);
-                    t1.speak(information, TextToSpeech.QUEUE_ADD, null);
+                    t1.speak(information, TextToSpeech.QUEUE_FLUSH, null);
                 }
             }
         });

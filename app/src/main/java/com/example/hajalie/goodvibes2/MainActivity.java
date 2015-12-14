@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements
     private GoogleApiClient googleApiClient = null;
     private boolean connected = false;
     private float originalLocationAccuracy;
+    private boolean fromSpeaking = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,7 +121,7 @@ public class MainActivity extends AppCompatActivity implements
 
             @Override
             public void onClick(View v) {
-
+                fromSpeaking = true;
                 Intent intent = new Intent(
                         RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 
@@ -132,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements
                     txtText.setText("");
                 } catch (ActivityNotFoundException a) {
                     Toast t = Toast.makeText(getApplicationContext(),
-                            "Opps! Your device doesn't support Speech to Text",
+                            "Oops! Your device doesn't support Speech to Text",
                             Toast.LENGTH_SHORT);
                     t.show();
                 }
@@ -413,8 +414,8 @@ public class MainActivity extends AppCompatActivity implements
 
                     } catch(JSONException e) {
                         Log.e("placesRequest", "JSON exception", e);
-                        Toast toast = Toast.makeText(context, Values.PLACES_ERROR + " " + status, Toast.LENGTH_SHORT);
-                        t1.speak(Values.PLACES_ERROR + " " + status, TextToSpeech.QUEUE_ADD, null);
+                        Toast toast = Toast.makeText(context, Values.PLACES_ERROR + ", " + status, Toast.LENGTH_SHORT);
+                        t1.speak(Values.PLACES_ERROR + ", " + status, TextToSpeech.QUEUE_ADD, null);
                         toast.show();
                     }
                 }
@@ -465,7 +466,7 @@ public class MainActivity extends AppCompatActivity implements
                                     intent.putExtra("destination", destination);
                                     intent.putExtra("accuracy", originalLocationAccuracy);
                                     intent.putExtra("response", leg.toString());
-                                    t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
+                                    fromSpeaking = false;
                                     startActivity(intent);
                                 }
                             } catch (JSONException e) {
@@ -513,12 +514,17 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onResume() {
         super.onResume();
-        t1.speak("Please tap the screen and speak your destination. Ask for help for more details.", TextToSpeech.QUEUE_ADD, null);
+        if (!fromSpeaking) {
+            t1.speak("Please tap the screen and speak your destination. Ask for help for more details.", TextToSpeech.QUEUE_ADD, null);
+        } else {
+            fromSpeaking = false;
+        }
     }
 
     @Override
     public void onStop() {
         super.onStop();
+        fromSpeaking = false;
         googleApiClient.disconnect();
     }
 }
