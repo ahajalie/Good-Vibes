@@ -305,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements
 
     //Quick test to see if android usb is working
     public void arduinoTest(View view) {
-        int temp = arduino.write("9");
+        int temp = arduino.write(Integer.toString(Values.ALL_DIRECTIONS));
         if(temp == -1) {
             arduino = new Arduino(getApplicationContext());
             t1.speak("Arduino failure", TextToSpeech.QUEUE_ADD, null);
