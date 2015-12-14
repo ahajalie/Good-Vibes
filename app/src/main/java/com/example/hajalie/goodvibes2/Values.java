@@ -13,14 +13,14 @@ public class Values {
     static final String PATH_ERROR = "ERROR: No paths for this destination.";
     static final String ARRIVE_AT_DESTINATION = "Congratulations! You have arrived at your destination.";
     static final String PLACES_ERROR = "Error: Could not find your destination";
-    static final int    FRONT = 0,
-                        FRONT_RIGHT = 1,
-                        RIGHT = 2,
-                        BACK_RIGHT = 3,
-                        BACK = 4,
-                        BACK_LEFT = 5,
-                        LEFT = 6,
-                        FRONT_LEFT = 7,
-                        ALL_DIRECTIONS = 8;
+    static final int    FRONT = 2,
+                        FRONT_RIGHT = 5,
+                        RIGHT = 4,
+                        BACK_RIGHT = 8,
+                        BACK = 3,
+                        BACK_LEFT = 7,
+                        LEFT = 1,
+                        FRONT_LEFT = 6,
+                        ALL_DIRECTIONS = 9;
 }
 
