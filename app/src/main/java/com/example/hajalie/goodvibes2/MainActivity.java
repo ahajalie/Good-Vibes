@@ -23,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -81,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements
 //            }
 //        });
         arduino = new Arduino(getApplicationContext());
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+//        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         preferences = getApplicationContext().getSharedPreferences("preferences", 0);
         editor = preferences.edit();
         btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
@@ -97,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements
                 if(status != TextToSpeech.ERROR) {
                     t1.setLanguage(Locale.US);
                     noErrors = true;
-                    checkBluetooth();
+//                    checkBluetooth();
                     if(!isNetworkConnected()) {
                         noErrors = false;
                         t1.speak("Please enable WI-FI or network connectivity and try again.", TextToSpeech.QUEUE_ADD, null);
@@ -244,6 +245,9 @@ public class MainActivity extends AppCompatActivity implements
         if(containsWord(str, "interval")) {
             float interval = containsNumber(str);
             if(interval >= 0) {
+                if(interval > 50) {
+                    interval = 50;
+                }
                 editor.putFloat("interval", interval);
                 editor.commit();
                 t1.speak("Interval set to " + Float.toString(interval) + "seconds", TextToSpeech.QUEUE_FLUSH, null);
@@ -252,22 +256,26 @@ public class MainActivity extends AppCompatActivity implements
                 t1.speak("Invalid interval value, please try again", TextToSpeech.QUEUE_FLUSH, null);
             }
         }
-        else if(containsWord(str, "intensity")) {
-            float intensity = containsNumber(str);
-            if(intensity >= 0) {
-                editor.putFloat("intensity", intensity);
-                editor.commit();
-                t1.speak("Intensity set to " + Float.toString(intensity), TextToSpeech.QUEUE_FLUSH, null);
-            }
-            else {
-                t1.speak("Invalid intensity value, please try again", TextToSpeech.QUEUE_FLUSH, null);
-            }
-        }
+//        else if(containsWord(str, "intensity")) {
+//            float intensity = containsNumber(str);
+//            if(intensity >= 0) {
+//                editor.putFloat("intensity", intensity);
+//                editor.commit();
+//                t1.speak("Intensity set to " + Float.toString(intensity), TextToSpeech.QUEUE_FLUSH, null);
+//            }
+//            else {
+//                t1.speak("Invalid intensity value, please try again", TextToSpeech.QUEUE_FLUSH, null);
+//            }
+//        }
         else if(containsWord(str, "help")) {
             t1.speak("Tap the screen and say your destination", TextToSpeech.QUEUE_FLUSH, null);
-            t1.speak("You can also change the intensity value of the motor or the interval time between vibrations in seconds", TextToSpeech.QUEUE_ADD, null);
+            t1.speak("You can also change the interval time between vibrations", TextToSpeech.QUEUE_ADD, null);
             t1.speak("Once the directions have loaded, you can tap the screen and say cancel to cancel directions", TextToSpeech.QUEUE_ADD, null);
 
+        }
+        else if(containsWord(str, "hidden") && containsWord(str, "test") && containsWord(str, "menu")) {
+            LinearLayout ll = (LinearLayout) findViewById(R.id.testButtonsLayout);
+            ll.setMinimumHeight(100);
         }
         else {
             t1.speak("Your Destination is" + str, TextToSpeech.QUEUE_FLUSH, null);
@@ -279,7 +287,7 @@ public class MainActivity extends AppCompatActivity implements
 
     //Quick test to see if android usb is working
     public void arduinoTest(View view) {
-        int temp = arduino.write("1");
+        int temp = arduino.write("9");
         if(temp == -1) {
             arduino = new Arduino(getApplicationContext());
             t1.speak("Arduino failure", TextToSpeech.QUEUE_ADD, null);
@@ -457,6 +465,7 @@ public class MainActivity extends AppCompatActivity implements
                                     intent.putExtra("destination", destination);
                                     intent.putExtra("accuracy", originalLocationAccuracy);
                                     intent.putExtra("response", leg.toString());
+                                    t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
                                     startActivity(intent);
                                 }
                             } catch (JSONException e) {
