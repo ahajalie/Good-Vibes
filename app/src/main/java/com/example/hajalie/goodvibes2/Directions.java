@@ -70,7 +70,7 @@ public class Directions extends AppCompatActivity implements
     private boolean paused = false;
     TextToSpeech t1;
     protected static final int RESULT_SPEECH = 1;
-    private TextView textView0, textView1, textView2, textView3, textView4, textView5;
+    private TextView textView0, textView1, textView2, textView3, textView4, textView5, textView6;
 
     Arduino arduino;
 
@@ -114,6 +114,7 @@ public class Directions extends AppCompatActivity implements
         textView3 = (TextView) findViewById(R.id.direction_output3);
         textView4 = (TextView) findViewById(R.id.direction_output4);
         textView5 = (TextView) findViewById(R.id.direction_output5);
+        textView6 = (TextView) findViewById(R.id.direction_output6);
         //swapped textviews so that info is on top
         textView1.setText(Html.fromHtml(route.getTargetStep().htmlInstructions));
         information = new String();
@@ -212,7 +213,7 @@ public class Directions extends AppCompatActivity implements
             }
             vibeDir = (int) ((direction + (Math.PI / 8)) / (Math.PI / 4));
             if (vibeDir < 0 || vibeDir > 8) vibrateBelt(Values.ALL_DIRECTIONS);
-            textView4.setText("Angle to point: " + Float.toString(direction));
+            textView5.setText("Angle to point: " + Float.toString(direction));
         }
         switch (vibeDir) {
             case (0):
@@ -321,46 +322,50 @@ public class Directions extends AppCompatActivity implements
         String endAddress;
         String durationText;
         String distanceText;
-        ArrayList<Step> steps;
+        JSONArray steps;
+        Step step;
         int numSteps;
         int currentStep;
 
         Route (JSONObject response) throws JSONException {
-            JSONObject route, leg, step;
-            route = response.getJSONArray("routes").getJSONObject(0);
-            leg = route.getJSONArray("legs").getJSONObject(0);
-            endAddress = leg.getString("end_address");
-            durationText = leg.getJSONObject("duration").getString("text");
-            distanceText = leg.getJSONObject("distance").getString("text");
-            JSONArray steps = leg.getJSONArray("steps");
-            this.steps = new ArrayList<Step>();
-            for (int i = 0; i < steps.length(); i++) {
-                step = steps.getJSONObject(i);
-                this.steps.add(new Step(step));
-            }
-            numSteps = this.steps.size();
+            endAddress = response.getString("end_address");
+            durationText = response.getJSONObject("duration").getString("text");
+            distanceText = response.getJSONObject("distance").getString("text");
+            steps = response.getJSONArray("steps");
+            step = new Step(steps.getJSONObject(0));
+            numSteps = steps.length();
             currentStep = 0;
         }
 
         Location getTargetLocation () {
-            if (currentStep < numSteps) {
+            if (step != null) {
                 Location location = new Location("");
-                location.setLatitude(steps.get(currentStep).endLat);
-                location.setLongitude(steps.get(currentStep).endLng);
+                location.setLatitude(step.endLat);
+                location.setLongitude(step.endLng);
                 return location;
             }
             return null;
         }
 
         Step getTargetStep () {
-            if (currentStep < numSteps) {
-                return steps.get(currentStep);
-            }
-            return null;
+            return step;
         }
 
         void incrementTargetLocation () {
-            currentStep++;
+            try {
+                currentStep++;
+                if (currentStep < numSteps) {
+                    step = new Step(steps.getJSONObject(currentStep));
+                } else {
+                    step = null;
+                }
+            } catch (JSONException e) {
+                Log.e("GoodVibes", "JSON exception", e);
+                Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+                t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                toast.show();
+            }
+
         }
 
         boolean arrivedAtDestination () {
@@ -373,13 +378,13 @@ public class Directions extends AppCompatActivity implements
         currentLocation = newLocation;
         Location targetLocation = route.getTargetLocation();
 
-        // Check if reached target location
-        String distance = "Distance: " + newLocation.distanceTo(targetLocation) + "\n";
-        distance += Html.fromHtml(route.getTargetStep().htmlInstructions);
+        textView2.setText("Distance: " + newLocation.distanceTo(targetLocation));
         float distanceToNextPoint = newLocation.distanceTo(targetLocation);
         if (distanceToNextPoint < minDistanceToNextPoint) {
             minDistanceToNextPoint = distanceToNextPoint;
         }
+
+        // Check if reached target location
         if (distanceToNextPoint < Values.LOCATION_BUFFER) {
             route.incrementTargetLocation();
             if (route.arrivedAtDestination()) { // Arrived at final location
@@ -395,13 +400,12 @@ public class Directions extends AppCompatActivity implements
                 return;
             } else { // Did not arrive at final location
                 targetLocation = route.getTargetLocation();
-                distance = "Distance: " + newLocation.distanceTo(targetLocation) + "\n";
-                distance += Html.fromHtml(route.getTargetStep().htmlInstructions);
+                textView2.setText("Distance: " + newLocation.distanceTo(targetLocation));
+                textView1.setText(Html.fromHtml(route.getTargetStep().htmlInstructions));
                 minDistanceToNextPoint = Float.MAX_VALUE;
                 vibrateBeltTowardNextPoint();
             }
         }
-        textView1.setText(distance);
 
         // Update bearing
         updateBearing(targetLocation);
@@ -430,7 +434,7 @@ public class Directions extends AppCompatActivity implements
                 bearing += 360;
             }
             bearing = bearing * (float) Math.PI / 180;
-            textView3.setText("Bearing: " + Float.toString(bearing));
+            textView4.setText("Bearing: " + Float.toString(bearing));
         }
     }
 
@@ -509,7 +513,7 @@ public class Directions extends AppCompatActivity implements
             if (avg < 0) {
                 avg += Math.PI * 2;
             }
-            textView5.setText("Avg Compass Orientation: "+ Float.toString(avg));
+            textView6.setText("Avg Compass Orientation: " + Float.toString(avg));
             return avg;
         }
     }
@@ -610,7 +614,7 @@ public class Directions extends AppCompatActivity implements
                 synchronized (azimuthList) {
                     azimuthList.remove(azimuthList.size() - 1);
                     azimuthList.add(0, azimuth);
-                    textView2.setText("Compass Orientation: "+ Float.toString(azimuth));
+                    textView3.setText("Compass Orientation: " + Float.toString(azimuth));
                 }
             }
         }

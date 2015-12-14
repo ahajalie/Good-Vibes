@@ -32,7 +32,8 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="BLANK"
-        android:id="@+id/direction_output2"/>
+        android:id="@+id/direction_output2"
+        android:layout_below="@+id/direction_output1"/>
 
     <TextView
         android:layout_width="wrap_content"
@@ -57,5 +58,13 @@
         android:text="BLANK"
         android:id="@+id/direction_output5"
         android:layout_below="@+id/direction_output4" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="BLANK"
+        android:id="@+id/direction_output6"
+        android:layout_below="@+id/direction_output5" />
 
 </LinearLayout>

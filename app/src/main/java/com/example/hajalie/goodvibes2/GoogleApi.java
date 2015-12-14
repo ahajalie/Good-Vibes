@@ -32,7 +32,7 @@ public class GoogleApi {
 
     private final String DIRECTIONS_API_URL = "https://maps.googleapis.com/maps/api/directions/json?origin=";
     private final String PLACES_API_URL = "https://maps.googleapis.com/maps/api/place/textsearch/json?location=";
-    private final String API_KEY = "AIzaSyAypAdSyp1m-Vwg1H0pbKAVTuFrhkhrE_c";
+    private final String API_KEY = "AIzaSyCKIzrvm1-Xg9C7LJcp5xQp50IB5JzhtjA";
     String directionsURL;
     private static RequestQueue requestQueue = null;
     private static RequestQueue requestQueue0 = null;
