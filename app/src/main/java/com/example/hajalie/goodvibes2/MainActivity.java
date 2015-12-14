@@ -23,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -270,6 +271,10 @@ public class MainActivity extends AppCompatActivity implements
             t1.speak("Once the directions have loaded, you can tap the screen and say cancel to cancel directions", TextToSpeech.QUEUE_ADD, null);
 
         }
+        else if(containsWord(str, "hidden") && containsWord(str, "test") && containsWord(str, "menu")) {
+            LinearLayout ll = (LinearLayout) findViewById(R.id.testButtonsLayout);
+            ll.setMinimumHeight(100);
+        }
         else {
             t1.speak("Your Destination is" + str, TextToSpeech.QUEUE_FLUSH, null);
             txtText.setText(str);
@@ -280,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements
 
     //Quick test to see if android usb is working
     public void arduinoTest(View view) {
-        int temp = arduino.write("1");
+        int temp = arduino.write("9");
         if(temp == -1) {
             arduino = new Arduino(getApplicationContext());
             t1.speak("Arduino failure", TextToSpeech.QUEUE_ADD, null);
@@ -458,6 +463,7 @@ public class MainActivity extends AppCompatActivity implements
                                     intent.putExtra("location", location);
                                     intent.putExtra("destination", destination);
                                     intent.putExtra("response", leg.toString());
+                                    t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
                                     startActivity(intent);
                                 }
 
