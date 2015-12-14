@@ -1,22 +1,19 @@
 package com.example.hajalie.goodvibes2;
 
+import android.app.ActionBar;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -33,7 +30,6 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -51,7 +47,7 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
-    private ImageButton btnSpeak;
+    private ImageButton mainImageButton;
     private TextView txtText;
     Arduino arduino;
     TextToSpeech t1;
@@ -82,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements
 //                        .setAction("Action", null).show();
 //            }
 //        });
+
         arduino = new Arduino(getApplicationContext());
         LinearLayout ll = (LinearLayout) findViewById(R.id.testButtonsLayout);
         LinearLayout ll2 = (LinearLayout) findViewById(R.id.testLine);
@@ -94,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements
 //        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         preferences = getApplicationContext().getSharedPreferences("preferences", 0);
         editor = preferences.edit();
-        btnSpeak = (ImageButton) findViewById(R.id.btnSpeak);
+        mainImageButton = (ImageButton) findViewById(R.id.main_image_button);
         txtText = (TextView) findViewById(R.id.direction_input);
         googleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -146,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements
                 }
             }
         };
-        btnSpeak.setOnClickListener(listener);
+        mainImageButton.setOnClickListener(listener);
         mainlayout.setOnClickListener(listener);
     }
 
@@ -286,7 +283,7 @@ public class MainActivity extends AppCompatActivity implements
             t1.speak("Once the directions have loaded, you can tap the screen and say cancel to cancel directions", TextToSpeech.QUEUE_ADD, null);
 
         }
-        else if(containsWord(str, "hidden") && containsWord(str, "test") && containsWord(str, "menu")) {
+        else if(containsWord(str, "debug") && containsWord(str, "screen")) {
             LinearLayout ll = (LinearLayout) findViewById(R.id.testButtonsLayout);
             LinearLayout ll2 = (LinearLayout) findViewById(R.id.testLine);
             if(ll.getVisibility() == LinearLayout.GONE) {

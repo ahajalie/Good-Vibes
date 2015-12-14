@@ -1,5 +1,6 @@
 package com.example.hajalie.goodvibes2;
 
+import android.app.ActionBar;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
@@ -21,6 +22,7 @@ import android.text.Html;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -71,6 +73,7 @@ public class Directions extends AppCompatActivity implements
     TextToSpeech t1;
     protected static final int RESULT_SPEECH = 1;
     private TextView textView0, textView1, textView2, textView3, textView4, textView5, textView6;
+    private ImageButton directionImageButton;
 
     Arduino arduino;
 
@@ -78,8 +81,8 @@ public class Directions extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_directions);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+//        setSupportActionBar(toolbar);
 
         //keep te screen on
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -188,9 +191,10 @@ public class Directions extends AppCompatActivity implements
 
         //This code sets up input so that touching the screen causes the voice input to start
         LinearLayout linearlayout = (LinearLayout) findViewById(R.id.directions_layout);
+        directionImageButton = (ImageButton) findViewById(R.id.direction_image_button);
         linearlayout.setVisibility(LinearLayout.GONE);
         linearlayout.setVisibility(LinearLayout.VISIBLE);
-        linearlayout.setOnClickListener(new View.OnClickListener() {
+        View.OnClickListener listener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
@@ -208,8 +212,9 @@ public class Directions extends AppCompatActivity implements
                     t.show();
                 }
             }
-        });
-
+        };
+        linearlayout.setOnClickListener(listener);
+        directionImageButton.setOnClickListener(listener);
         //initialize Arduino class
         arduino = new Arduino(getApplicationContext());
         arduino.write("hello");
@@ -259,7 +264,6 @@ public class Directions extends AppCompatActivity implements
 
     // Vibrate belt in specific direction
     public void vibrateBelt(Integer vibeDir) {
-        vibrate();// Todo: delete
         arduino.write(vibeDir.toString());
     }
 
@@ -306,9 +310,8 @@ public class Directions extends AppCompatActivity implements
                         }
                         finish();
                     }
-                    else if(MainActivity.containsWord(response, "hidden") &&
-                            MainActivity.containsWord(response, "test") &&
-                            MainActivity.containsWord(response, "menu") ) {
+                    else if(MainActivity.containsWord(response, "debug") &&
+                            MainActivity.containsWord(response, "screen") ) {
                         //DISABLE STUFF
                         if(textView0.getVisibility() == TextView.VISIBLE) {
                             textView0.setVisibility(TextView.GONE);
@@ -318,6 +321,7 @@ public class Directions extends AppCompatActivity implements
                             textView4.setVisibility(TextView.GONE);
                             textView5.setVisibility(TextView.GONE);
                             textView6.setVisibility(TextView.GONE);
+                            directionImageButton.setVisibility(TextView.VISIBLE);
                         }
                         else {
                             textView0.setVisibility(TextView.VISIBLE);
@@ -327,7 +331,7 @@ public class Directions extends AppCompatActivity implements
                             textView4.setVisibility(TextView.VISIBLE);
                             textView5.setVisibility(TextView.VISIBLE);
                             textView6.setVisibility(TextView.VISIBLE);
-
+                            directionImageButton.setVisibility(TextView.GONE);
                         }
                     }
                 }
@@ -447,14 +451,12 @@ public class Directions extends AppCompatActivity implements
 
         // Make new API request if necessary
         if (newLocation.getAccuracy() < bestAccuracy - 10) {
-            // Todo: MAKE NEW HTTP REQUEST HERE ALIE
             bestAccuracy = newLocation.getAccuracy();
             makeNewHttpRequest = true;
             // Make sure it has time to finish request and construct data structures, or else
             //   multithreaded access to shared data = must synchronize
             // Also there are a shitton of state variables you have to update
         } else if (distanceToNextPoint - minDistanceToNextPoint > 50) {
-            // Todo: MAKE NEW HTTP REQUEST HERE TOO ALIE
             bestAccuracy = newLocation.getAccuracy();
             makeNewHttpRequest = true;
         }
