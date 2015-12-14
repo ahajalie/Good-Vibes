@@ -455,7 +455,6 @@ public class MainActivity extends AppCompatActivity implements
                                     intent.putExtra("response", leg.toString());
                                     startActivity(intent);
                                 }
-
                             } catch (JSONException e) {
                                 Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT).show();
                                 t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
