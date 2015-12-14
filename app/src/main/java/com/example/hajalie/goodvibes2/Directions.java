@@ -86,11 +86,11 @@ public class Directions extends AppCompatActivity implements
 
         // Good Vibes Code //
         // Initialization
-        bestAccuracy = null; // on new http
         minDistanceToNextPoint = Float.MAX_VALUE; // on new http
 
         destination = getIntent().getExtras().getString("destination");
         currentLocation = (Location) getIntent().getExtras().get("location");
+        bestAccuracy = (Float) getIntent().getExtras().get("accuracy");
         try {
             JSONObject response = new JSONObject(getIntent().getExtras().getString("response"));
             route = new Route(response); // Todo: Exits out of app when route is too long (too much memory?)
@@ -411,17 +411,16 @@ public class Directions extends AppCompatActivity implements
         updateBearing(targetLocation);
 
         // Make new API request if necessary
-        if (bestAccuracy == null) {
-            bestAccuracy = newLocation.getAccuracy();
-        } else if (newLocation.getAccuracy() < bestAccuracy - 10) {
-            bestAccuracy = newLocation.getAccuracy();
+        if (newLocation.getAccuracy() < bestAccuracy - 10) {
             // Todo: MAKE NEW HTTP REQUEST HERE ALIE
+            bestAccuracy = newLocation.getAccuracy();
             makeNewHttpRequest = true;
             // Make sure it has time to finish request and construct data structures, or else
             //   multithreaded access to shared data = must synchronize
             // Also there are a shitton of state variables you have to update
         } else if (distanceToNextPoint - minDistanceToNextPoint > 50) {
             // Todo: MAKE NEW HTTP REQUEST HERE TOO ALIE
+            bestAccuracy = newLocation.getAccuracy();
             makeNewHttpRequest = true;
         }
         redoRequest();
@@ -466,7 +465,6 @@ public class Directions extends AppCompatActivity implements
                                     Log.e("GoodVibes", "JSON exception", e);
                                 }
                                 updateBearing(route.getTargetLocation());
-                                bestAccuracy = null;
                                 minDistanceToNextPoint = Float.MAX_VALUE;
                                 information = new String();
                                 information += "Location: " + route.endAddress + "." + "\n";
