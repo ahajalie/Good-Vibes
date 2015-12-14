@@ -71,8 +71,8 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+//        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+//        setSupportActionBar(toolbar);
 
 //        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
 //        fab.setOnClickListener(new View.OnClickListener() {
@@ -124,8 +124,7 @@ public class MainActivity extends AppCompatActivity implements
             }
         });
 
-
-        btnSpeak.setOnClickListener(new View.OnClickListener() {
+        View.OnClickListener listener = new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -146,7 +145,9 @@ public class MainActivity extends AppCompatActivity implements
                     t.show();
                 }
             }
-        });
+        };
+        btnSpeak.setOnClickListener(listener);
+        mainlayout.setOnClickListener(listener);
     }
 
     // Vibrate the belt in a specific direction
