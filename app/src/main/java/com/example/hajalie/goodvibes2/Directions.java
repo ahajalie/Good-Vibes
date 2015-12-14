@@ -38,10 +38,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -70,9 +67,10 @@ public class Directions extends AppCompatActivity implements
     private String information;
     private Float bestAccuracy;
     private Float minDistanceToNextPoint;
+    private boolean paused = false;
     TextToSpeech t1;
     protected static final int RESULT_SPEECH = 1;
-    private TextView textView0, textView1, textView2, textView3, textView4, textView5;
+    private TextView textView0, textView1, textView2, textView3, textView4, textView5, textView6;
 
     Arduino arduino;
 
@@ -116,6 +114,7 @@ public class Directions extends AppCompatActivity implements
         textView3 = (TextView) findViewById(R.id.direction_output3);
         textView4 = (TextView) findViewById(R.id.direction_output4);
         textView5 = (TextView) findViewById(R.id.direction_output5);
+        textView6 = (TextView) findViewById(R.id.direction_output6);
         //swapped textviews so that info is on top
         textView1.setText(Html.fromHtml(route.getTargetStep().htmlInstructions));
         information = new String();
@@ -151,9 +150,9 @@ public class Directions extends AppCompatActivity implements
             }
         });
 
-        SharedPreferences preferences = getApplicationContext().getSharedPreferences("preferences", 0);
         //retrieve interval from settings, default value of 5 if not defined
         //vibrate every $_INTERVAL seconds
+        SharedPreferences preferences = getApplicationContext().getSharedPreferences("preferences", 0);
         float interval = preferences.getFloat("interval", 5.0f);
         Long intervalInMs = Math.round(((double) interval) * 1000);
         final Handler handler = new Handler();
@@ -164,50 +163,13 @@ public class Directions extends AppCompatActivity implements
                 handler.post(new Runnable() {
                     @SuppressWarnings("unchecked")
                     public void run() {
-                        try {
-                            int vibeDir;
-                            synchronized (directionLock) {
-                                vibrate();
-                                direction = bearing - getAvgAzimuth(azimuthList); // Todo: True vs. magnetic north
-                                if (direction < 0) {
-                                    direction += 2 * (float) Math.PI;
-                                }
-                                vibeDir = (int) ((direction + (Math.PI / 8)) / (Math.PI / 4));
-                                if (vibeDir < 0 || vibeDir > 8) vibrateBelt(Values.ALL_DIRECTIONS);
-                                textView4.setText("Angle to point: " + Float.toString(direction));
+                        if (!paused) {
+                            try {
+                                vibrateBeltTowardNextPoint();
                             }
-                            switch (vibeDir) {
-                                case (0):
-                                    vibrateBelt(Values.FRONT);
-                                    break;
-                                case (1):
-                                    vibrateBelt(Values.FRONT_RIGHT);
-                                    break;
-                                case (2):
-                                    vibrateBelt(Values.RIGHT);
-                                    break;
-                                case (3):
-                                    vibrateBelt(Values.BACK_RIGHT);
-                                    break;
-                                case (4):
-                                    vibrateBelt(Values.BACK);
-                                    break;
-                                case (5):
-                                    vibrateBelt(Values.BACK_LEFT);
-                                    break;
-                                case (6):
-                                    vibrateBelt(Values.LEFT);
-                                    break;
-                                case (7):
-                                    vibrateBelt(Values.FRONT_LEFT);
-                                    break;
-                                case (8):
-                                    vibrateBelt(Values.FRONT);
-                                    break;
+                            catch (Exception e) {
+                                // TODO Auto-generated catch block
                             }
-                        }
-                        catch (Exception e) {
-                            // TODO Auto-generated catch block
                         }
                     }
                 });
@@ -225,7 +187,6 @@ public class Directions extends AppCompatActivity implements
                         RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
 
                 intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, "en-US");
-
                 try {
                     t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
                     startActivityForResult(intent, RESULT_SPEECH);
@@ -235,7 +196,6 @@ public class Directions extends AppCompatActivity implements
                             Toast.LENGTH_SHORT);
                     t.show();
                 }
-//                redoRequest();
             }
         });
 
@@ -244,8 +204,51 @@ public class Directions extends AppCompatActivity implements
         arduino.write("hello");
     }
 
+    public void vibrateBeltTowardNextPoint() {
+        int vibeDir;
+        synchronized (directionLock) {
+            direction = bearing - getAvgAzimuth(azimuthList); // Todo: True vs. magnetic north
+            if (direction < 0) {
+                direction += 2 * (float) Math.PI;
+            }
+            vibeDir = (int) ((direction + (Math.PI / 8)) / (Math.PI / 4));
+            if (vibeDir < 0 || vibeDir > 8) vibrateBelt(Values.ALL_DIRECTIONS);
+            textView5.setText("Angle to point: " + Float.toString(direction));
+        }
+        switch (vibeDir) {
+            case (0):
+                vibrateBelt(Values.FRONT);
+                break;
+            case (1):
+                vibrateBelt(Values.FRONT_RIGHT);
+                break;
+            case (2):
+                vibrateBelt(Values.RIGHT);
+                break;
+            case (3):
+                vibrateBelt(Values.BACK_RIGHT);
+                break;
+            case (4):
+                vibrateBelt(Values.BACK);
+                break;
+            case (5):
+                vibrateBelt(Values.BACK_LEFT);
+                break;
+            case (6):
+                vibrateBelt(Values.LEFT);
+                break;
+            case (7):
+                vibrateBelt(Values.FRONT_LEFT);
+                break;
+            case (8):
+                vibrateBelt(Values.FRONT);
+                break;
+        }
+    }
+
     // Vibrate belt in specific direction
     public void vibrateBelt(Integer vibeDir) {
+        vibrate();// Todo: delete
         arduino.write(vibeDir.toString());
     }
 
@@ -319,46 +322,50 @@ public class Directions extends AppCompatActivity implements
         String endAddress;
         String durationText;
         String distanceText;
-        ArrayList<Step> steps;
+        JSONArray steps;
+        Step step;
         int numSteps;
         int currentStep;
 
         Route (JSONObject response) throws JSONException {
-            JSONObject route, leg, step;
-            route = response.getJSONArray("routes").getJSONObject(0);
-            leg = route.getJSONArray("legs").getJSONObject(0);
-            endAddress = leg.getString("end_address");
-            durationText = leg.getJSONObject("duration").getString("text");
-            distanceText = leg.getJSONObject("distance").getString("text");
-            JSONArray steps = leg.getJSONArray("steps");
-            this.steps = new ArrayList<Step>();
-            for (int i = 0; i < steps.length(); i++) {
-                step = steps.getJSONObject(i);
-                this.steps.add(new Step(step));
-            }
-            numSteps = this.steps.size();
+            endAddress = response.getString("end_address");
+            durationText = response.getJSONObject("duration").getString("text");
+            distanceText = response.getJSONObject("distance").getString("text");
+            steps = response.getJSONArray("steps");
+            step = new Step(steps.getJSONObject(0));
+            numSteps = steps.length();
             currentStep = 0;
         }
 
         Location getTargetLocation () {
-            if (currentStep < numSteps) {
+            if (step != null) {
                 Location location = new Location("");
-                location.setLatitude(steps.get(currentStep).endLat);
-                location.setLongitude(steps.get(currentStep).endLng);
+                location.setLatitude(step.endLat);
+                location.setLongitude(step.endLng);
                 return location;
             }
             return null;
         }
 
         Step getTargetStep () {
-            if (currentStep < numSteps) {
-                return steps.get(currentStep);
-            }
-            return null;
+            return step;
         }
 
         void incrementTargetLocation () {
-            currentStep++;
+            try {
+                currentStep++;
+                if (currentStep < numSteps) {
+                    step = new Step(steps.getJSONObject(currentStep));
+                } else {
+                    step = null;
+                }
+            } catch (JSONException e) {
+                Log.e("GoodVibes", "JSON exception", e);
+                Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
+                t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                toast.show();
+            }
+
         }
 
         boolean arrivedAtDestination () {
@@ -371,33 +378,32 @@ public class Directions extends AppCompatActivity implements
         currentLocation = newLocation;
         Location targetLocation = route.getTargetLocation();
 
-        // Check if reached target location
-        String distance = "Distance: " + newLocation.distanceTo(targetLocation) + "\n";
-        distance += Html.fromHtml(route.getTargetStep().htmlInstructions);
-        textView1.setText(distance);
+        textView2.setText("Distance: " + newLocation.distanceTo(targetLocation));
         float distanceToNextPoint = newLocation.distanceTo(targetLocation);
         if (distanceToNextPoint < minDistanceToNextPoint) {
             minDistanceToNextPoint = distanceToNextPoint;
         }
+
+        // Check if reached target location
         if (distanceToNextPoint < Values.LOCATION_BUFFER) {
             route.incrementTargetLocation();
-            targetLocation = route.getTargetLocation();
-            distance = "Distance: " + distanceToNextPoint + "\n";
-            distance += Html.fromHtml(route.getTargetStep().htmlInstructions);
-            textView1.setText(distance);
-            minDistanceToNextPoint = Float.MAX_VALUE;
-            vibrate();
-            // Check if arrived at destination
-            if (route.arrivedAtDestination()) {
-                // Stop giving directions
+            if (route.arrivedAtDestination()) { // Arrived at final location
+                timer.cancel();
                 if (googleApiClient.isConnected() && requestingLocationUpdates) {
                     stopLocationUpdates();
                 }
                 sensorManager.unregisterListener(this);
                 Toast toast = Toast.makeText(context, Values.ARRIVE_AT_DESTINATION, Toast.LENGTH_SHORT);
                 toast.show();
+                vibrateBelt(Values.ALL_DIRECTIONS);
                 finished = true;
                 return;
+            } else { // Did not arrive at final location
+                targetLocation = route.getTargetLocation();
+                textView2.setText("Distance: " + newLocation.distanceTo(targetLocation));
+                textView1.setText(Html.fromHtml(route.getTargetStep().htmlInstructions));
+                minDistanceToNextPoint = Float.MAX_VALUE;
+                vibrateBeltTowardNextPoint();
             }
         }
 
@@ -428,7 +434,7 @@ public class Directions extends AppCompatActivity implements
                 bearing += 360;
             }
             bearing = bearing * (float) Math.PI / 180;
-            textView3.setText("Bearing: " + Float.toString(bearing));
+            textView4.setText("Bearing: " + Float.toString(bearing));
         }
     }
 
@@ -440,7 +446,6 @@ public class Directions extends AppCompatActivity implements
                     String status = "";
                     try {
                         status = newResponse.getString("status");
-
                     } catch(JSONException e) {
                         Log.e("GoodVibes", "JSON exception", e);
                         Toast toast = Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT);
@@ -508,7 +513,7 @@ public class Directions extends AppCompatActivity implements
             if (avg < 0) {
                 avg += Math.PI * 2;
             }
-            textView5.setText("Avg Compass Orientation: "+ Float.toString(avg));
+            textView6.setText("Avg Compass Orientation: " + Float.toString(avg));
             return avg;
         }
     }
@@ -555,7 +560,6 @@ public class Directions extends AppCompatActivity implements
     @Override
     public void onStop() {
         super.onStop();
-        timer.cancel();
         t1.stop();
         googleApiClient.disconnect();
     }
@@ -564,6 +568,7 @@ public class Directions extends AppCompatActivity implements
     @Override
     protected void onPause() {
         super.onPause();
+        paused = true;
         if (googleApiClient.isConnected() && requestingLocationUpdates) {
             stopLocationUpdates();
         }
@@ -580,6 +585,7 @@ public class Directions extends AppCompatActivity implements
             sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
             sensorManager.registerListener(this, magnetometer, SensorManager.SENSOR_DELAY_UI);
         }
+        paused = false;
     }
 
     float[] mGravity;
@@ -608,7 +614,7 @@ public class Directions extends AppCompatActivity implements
                 synchronized (azimuthList) {
                     azimuthList.remove(azimuthList.size() - 1);
                     azimuthList.add(0, azimuth);
-                    textView2.setText("Compass Orientation: "+ Float.toString(azimuth));
+                    textView3.setText("Compass Orientation: " + Float.toString(azimuth));
                 }
             }
         }

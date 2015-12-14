@@ -32,6 +32,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -395,15 +396,17 @@ public class MainActivity extends AppCompatActivity implements
                 @Override
                 public void onResponse(JSONObject response) {
                     String coordinates = "";
+                    String status = "";
                     try {
+                        status = response.getString("status");
                         JSONObject loc = response.getJSONArray("results").getJSONObject(0).getJSONObject("geometry").getJSONObject("location");
                         coordinates = loc.getString("lat") + "," + loc.getString("lng");
                         directionsRequest(location, coordinates);
 
                     } catch(JSONException e) {
                         Log.e("placesRequest", "JSON exception", e);
-                        Toast toast = Toast.makeText(context, Values.PLACES_ERROR, Toast.LENGTH_SHORT);
-                        t1.speak(Values.PLACES_ERROR, TextToSpeech.QUEUE_ADD, null);
+                        Toast toast = Toast.makeText(context, Values.PLACES_ERROR + " " + status, Toast.LENGTH_SHORT);
+                        t1.speak(Values.PLACES_ERROR + " " + status, TextToSpeech.QUEUE_ADD, null);
                         toast.show();
                     }
                 }
@@ -440,11 +443,29 @@ public class MainActivity extends AppCompatActivity implements
                     }
                     switch (status) {
                         case "OK":
-                            Intent intent = new Intent(context, Directions.class);
-                            intent.putExtra("location", location);
-                            intent.putExtra("destination", destination);
-                            intent.putExtra("response", response.toString());
-                            startActivity(intent);
+                            try {
+                                Intent intent = new Intent(context, Directions.class);
+                                JSONObject leg = response.getJSONArray("routes").getJSONObject(0)
+                                        .getJSONArray("legs").getJSONObject(0);
+                                Integer numSteps = leg.getJSONArray("steps").length();
+                                Toast.makeText(context, numSteps.toString(), Toast.LENGTH_SHORT).show();
+                                t1.speak(numSteps.toString(), TextToSpeech.QUEUE_ADD, null);
+                                if (numSteps > 400) {
+                                    Toast.makeText(context, Values.ROUTE_TOO_LONG, Toast.LENGTH_SHORT).show();
+                                    t1.speak(Values.ROUTE_TOO_LONG, TextToSpeech.QUEUE_ADD, null);
+                                    break;
+                                } else {
+                                    intent.putExtra("location", location);
+                                    intent.putExtra("destination", destination);
+                                    intent.putExtra("response", leg.toString());
+                                    startActivity(intent);
+                                }
+
+                            } catch (JSONException e) {
+                                Toast.makeText(context, Values.UNKNOWN_ERROR, Toast.LENGTH_SHORT).show();
+                                t1.speak(Values.UNKNOWN_ERROR, TextToSpeech.QUEUE_ADD, null);
+                                break;
+                            }
                             break;
                         case "NOT_FOUND":
                             Toast.makeText(context, Values.DESTINATION_ERROR, Toast.LENGTH_SHORT).show();
