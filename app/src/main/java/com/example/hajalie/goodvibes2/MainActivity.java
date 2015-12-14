@@ -64,6 +64,8 @@ public class MainActivity extends AppCompatActivity implements
     private EditText editText;
     private GoogleApiClient googleApiClient = null;
     private boolean connected = false;
+    private float originalLocationAccuracy;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -388,6 +390,7 @@ public class MainActivity extends AppCompatActivity implements
         }
         Log.d("CHECKDESTINATION", "hello!");
         final String destination = str;
+        originalLocationAccuracy = location.getAccuracy();
         placesRequest(location, destination);
         //Make Places API Request
         // Make API request
@@ -460,6 +463,7 @@ public class MainActivity extends AppCompatActivity implements
                                 } else {
                                     intent.putExtra("location", location);
                                     intent.putExtra("destination", destination);
+                                    intent.putExtra("accuracy", originalLocationAccuracy);
                                     intent.putExtra("response", leg.toString());
                                     t1.speak("", TextToSpeech.QUEUE_FLUSH, null);
                                     startActivity(intent);
